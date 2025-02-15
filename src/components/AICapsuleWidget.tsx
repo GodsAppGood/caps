@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Bot, Upload, Calendar as CalendarIcon } from "lucide-react";
@@ -11,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 const AICapsuleWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [eventName, setEventName] = useState("");
+  const [message, setMessage] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -53,6 +55,17 @@ const AICapsuleWidget = () => {
                 value={eventName}
                 onChange={(e) => setEventName(e.target.value)}
                 className="bg-space-light/30 border-neon-blue/20 text-white placeholder:text-white/50 focus:border-neon-blue"
+              />
+            </div>
+
+            {/* Message Input */}
+            <div className="space-y-2">
+              <label className="text-sm text-neon-blue font-medium">MESSAGE</label>
+              <Textarea
+                placeholder="Write your message..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                className="min-h-[100px] bg-space-light/30 border-neon-blue/20 text-white placeholder:text-white/50 focus:border-neon-blue resize-none"
               />
             </div>
 
@@ -114,7 +127,7 @@ const AICapsuleWidget = () => {
               className="w-full bg-gradient-to-r from-neon-blue to-neon-pink text-white hover:opacity-90 transition-opacity"
               onClick={() => {
                 // Handle capsule creation
-                console.log("Creating capsule:", { eventName, selectedDate, selectedImage });
+                console.log("Creating capsule:", { eventName, message, selectedDate, selectedImage });
                 setIsOpen(false);
               }}
             >
