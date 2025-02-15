@@ -32,7 +32,7 @@ const AICapsuleWidget = () => {
       {/* Floating AI Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-gradient-to-r from-neon-blue to-neon-pink border border-white/20 backdrop-blur-lg shadow-lg hover:scale-110 transition-all duration-300 group animate-[pulse_3s_ease-in-out_infinite] z-50"
+        className="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-gradient-to-r from-neon-blue to-neon-pink border border-white/20 backdrop-blur-lg shadow-lg hover:scale-110 transition-all duration-300 group z-50"
       >
         <Bot className="w-8 h-8 mx-auto text-white" />
       </button>
