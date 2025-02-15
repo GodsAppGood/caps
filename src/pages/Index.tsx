@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Timer, Wallet, Star, Lock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Link } from "react-router-dom";
 import AICapsuleWidget from "@/components/AICapsuleWidget";
 
 const Index = () => {
@@ -20,7 +21,12 @@ const Index = () => {
           <div className="text-4xl font-bold tracking-wider animate-glow">
             <span className="text-neon-blue">CAPS</span>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
+            <Link to="/profile">
+              <Avatar className="w-10 h-10 border-2 border-neon-blue cursor-pointer hover:border-neon-pink transition-colors">
+                <AvatarFallback className="bg-space-dark text-neon-blue">UN</AvatarFallback>
+              </Avatar>
+            </Link>
             <button
               onClick={() => setIsWalletConnected(!isWalletConnected)}
               className="flex items-center gap-2 px-6 py-3 rounded-full bg-space-light border border-neon-pink text-neon-pink hover:bg-neon-pink hover:text-white transition-all duration-300"
