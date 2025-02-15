@@ -1,7 +1,7 @@
-
 import { useState } from "react";
 import { Timer, Wallet, Star, Lock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import AICapsuleWidget from "@/components/AICapsuleWidget";
 
 const Index = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
@@ -169,6 +169,9 @@ const Index = () => {
           />
         ))}
       </div>
+
+      {/* AI Widget */}
+      <AICapsuleWidget />
     </div>
   );
 };
