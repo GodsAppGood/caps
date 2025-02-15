@@ -42,15 +42,45 @@ const Index = () => {
           {[1, 2, 3].map((capsule) => (
             <div
               key={capsule}
-              className="relative min-w-[300px] h-[200px] bg-space-light/30 backdrop-blur-md rounded-xl p-6 border border-neon-blue/20 flex flex-col items-center justify-center gap-4"
+              className="relative min-w-[300px] h-[400px] group perspective-1000"
             >
-              <Avatar className="absolute top-4 right-4 w-8 h-8 border-2 border-neon-blue">
-                <AvatarFallback className="bg-space-dark text-neon-blue text-xs">UN</AvatarFallback>
-              </Avatar>
-              <Timer className="w-8 h-8 text-neon-blue animate-glow" />
-              <div className="text-center">
-                <p className="text-neon-blue">OPENS IN</p>
-                <p className="text-2xl font-bold">12:00:00</p>
+              {/* Glass Container */}
+              <div className="absolute inset-0 bg-gradient-to-b from-neon-blue/10 to-transparent rounded-[30px] backdrop-blur-md border border-neon-blue/20 overflow-hidden">
+                {/* Inner Glow Effect */}
+                <div className="absolute inset-0 bg-gradient-to-t from-neon-green/20 to-transparent opacity-50 animate-pulse" />
+                
+                {/* Technical Details - Horizontal Lines */}
+                <div className="absolute inset-x-0 top-1/4 h-px bg-gradient-to-r from-transparent via-neon-blue/30 to-transparent" />
+                <div className="absolute inset-x-0 top-2/4 h-px bg-gradient-to-r from-transparent via-neon-blue/30 to-transparent" />
+                <div className="absolute inset-x-0 top-3/4 h-px bg-gradient-to-r from-transparent via-neon-blue/30 to-transparent" />
+                
+                {/* Vertical Lines */}
+                <div className="absolute inset-y-0 left-8 w-px bg-gradient-to-b from-transparent via-neon-blue/30 to-transparent" />
+                <div className="absolute inset-y-0 right-8 w-px bg-gradient-to-b from-transparent via-neon-blue/30 to-transparent" />
+                
+                {/* Side Glows */}
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-32 bg-neon-pink blur-sm" />
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-32 bg-neon-pink blur-sm" />
+              </div>
+
+              {/* Content */}
+              <div className="relative h-full flex flex-col items-center justify-center gap-6 p-8">
+                <Avatar className="absolute top-4 right-4 w-8 h-8 border-2 border-neon-blue">
+                  <AvatarFallback className="bg-space-dark text-neon-blue text-xs">UN</AvatarFallback>
+                </Avatar>
+
+                <Timer className="w-12 h-12 text-neon-blue animate-glow" />
+                <div className="text-center z-10">
+                  <p className="text-neon-blue text-lg mb-2">OPENS IN</p>
+                  <p className="text-3xl font-bold text-white">12:00:00</p>
+                </div>
+
+                {/* Bottom Technical Details */}
+                <div className="absolute bottom-8 left-0 right-0 flex justify-center">
+                  <div className="px-4 py-2 bg-space-dark/50 rounded-full border border-neon-blue/30">
+                    <span className="text-neon-blue text-sm">CAPSULE ID: #00{capsule}</span>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -64,18 +94,43 @@ const Index = () => {
           {capsules.map((capsule) => (
             <div
               key={capsule.id}
-              className="group relative bg-space-light/30 backdrop-blur-md rounded-xl p-6 border border-neon-pink/20 hover:border-neon-pink transition-all duration-300"
+              className="group relative h-[400px] perspective-1000"
             >
-              <Avatar className="absolute top-4 right-4 w-8 h-8 border-2 border-neon-pink">
-                <AvatarFallback className="bg-space-dark text-neon-pink text-xs">
-                  {capsule.creator.name.slice(0, 2)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="absolute inset-0 bg-gradient-to-r from-neon-pink/0 to-neon-blue/0 group-hover:from-neon-pink/10 group-hover:to-neon-blue/10 rounded-xl transition-all duration-300" />
-              <div className="relative flex flex-col items-center gap-4">
-                <Lock className="w-8 h-8 text-neon-pink group-hover:scale-110 transition-transform duration-300" />
-                <h3 className="text-xl font-bold">{capsule.name}</h3>
-                <p className="text-neon-pink">OPENS {capsule.openDate}</p>
+              {/* Glass Container */}
+              <div className="absolute inset-0 bg-gradient-to-b from-neon-pink/10 to-transparent rounded-[30px] backdrop-blur-md border border-neon-pink/20 overflow-hidden">
+                {/* Inner Glow Effect */}
+                <div className="absolute inset-0 bg-gradient-to-t from-neon-green/20 to-transparent opacity-50 group-hover:opacity-70 transition-opacity duration-300" />
+                
+                {/* Technical Details */}
+                <div className="absolute inset-x-0 top-1/4 h-px bg-gradient-to-r from-transparent via-neon-pink/30 to-transparent" />
+                <div className="absolute inset-x-0 top-2/4 h-px bg-gradient-to-r from-transparent via-neon-pink/30 to-transparent" />
+                <div className="absolute inset-x-0 top-3/4 h-px bg-gradient-to-r from-transparent via-neon-pink/30 to-transparent" />
+                
+                {/* Side Glows */}
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-32 bg-neon-blue blur-sm" />
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-32 bg-neon-blue blur-sm" />
+              </div>
+
+              {/* Content */}
+              <div className="relative h-full flex flex-col items-center justify-center gap-6 p-8">
+                <Avatar className="absolute top-4 right-4 w-8 h-8 border-2 border-neon-pink">
+                  <AvatarFallback className="bg-space-dark text-neon-pink text-xs">
+                    {capsule.creator.name.slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+
+                <Lock className="w-12 h-12 text-neon-pink group-hover:scale-110 transition-transform duration-300" />
+                <div className="text-center z-10">
+                  <h3 className="text-2xl font-bold mb-2">{capsule.name}</h3>
+                  <p className="text-neon-pink">OPENS {capsule.openDate}</p>
+                </div>
+
+                {/* Bottom Technical Details */}
+                <div className="absolute bottom-8 left-0 right-0 flex justify-center">
+                  <div className="px-4 py-2 bg-space-dark/50 rounded-full border border-neon-pink/30">
+                    <span className="text-neon-pink text-sm">CAPSULE ID: #{capsule.id.toString().padStart(3, '0')}</span>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
