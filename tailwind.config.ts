@@ -32,6 +32,11 @@ export default {
           pink: "#FF00E5",
           green: "#00FF9D",
         },
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
       },
       animation: {
         "float": "float 6s ease-in-out infinite",
