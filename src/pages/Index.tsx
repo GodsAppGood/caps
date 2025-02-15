@@ -41,7 +41,7 @@ const Index = () => {
           {[1, 2, 3].map((capsule) => (
             <div
               key={capsule}
-              className="min-w-[300px] h-[200px] bg-space-light/30 backdrop-blur-md rounded-xl p-6 border border-neon-blue/20 animate-float flex flex-col items-center justify-center gap-4"
+              className="min-w-[300px] h-[200px] bg-space-light/30 backdrop-blur-md rounded-xl p-6 border border-neon-blue/20 flex flex-col items-center justify-center gap-4"
             >
               <Timer className="w-8 h-8 text-neon-blue animate-glow" />
               <div className="text-center">
@@ -60,7 +60,7 @@ const Index = () => {
           {capsules.map((capsule) => (
             <div
               key={capsule.id}
-              className="group relative bg-space-light/30 backdrop-blur-md rounded-xl p-6 border border-neon-pink/20 hover:border-neon-pink transition-all duration-300 animate-float"
+              className="group relative bg-space-light/30 backdrop-blur-md rounded-xl p-6 border border-neon-pink/20 hover:border-neon-pink transition-all duration-300"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-neon-pink/0 to-neon-blue/0 group-hover:from-neon-pink/10 group-hover:to-neon-blue/10 rounded-xl transition-all duration-300" />
               <div className="relative flex flex-col items-center gap-4">
