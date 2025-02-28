@@ -1,12 +1,12 @@
+
 import { useState } from "react";
-import { Timer, Wallet, Star, Lock } from "lucide-react";
+import { Timer, Star, Lock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
 import AICapsuleWidget from "@/components/AICapsuleWidget";
+import { WalletConnect } from "@/components/WalletConnect";
 
 const Index = () => {
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
-
   const capsules = [
     { id: 1, name: "STELLAR MEMORIES", openDate: "2024-12-31", creator: { name: "ALEX", avatar: "" } },
     { id: 2, name: "COSMIC THOUGHTS", openDate: "2024-10-15", creator: { name: "MARIA", avatar: "" } },
@@ -27,13 +27,7 @@ const Index = () => {
                 <AvatarFallback className="bg-space-dark text-neon-blue">UN</AvatarFallback>
               </Avatar>
             </Link>
-            <button
-              onClick={() => setIsWalletConnected(!isWalletConnected)}
-              className="flex items-center gap-2 px-6 py-3 rounded-full bg-space-light border border-neon-pink text-neon-pink hover:bg-neon-pink hover:text-white transition-all duration-300"
-            >
-              <Wallet className="w-5 h-5" />
-              {isWalletConnected ? "CONNECTED" : "CONNECT WALLET"}
-            </button>
+            <WalletConnect />
             <button className="px-6 py-3 rounded-full bg-space-light border border-neon-green text-neon-green hover:bg-neon-green hover:text-white transition-all duration-300">
               PREMIUM CAPS
             </button>
