@@ -15,34 +15,34 @@ export const WalletConnect = () => {
     setMounted(true);
   }, []);
 
-  // Обработка подключения/отключения кошелька
+  // Handle wallet connection/disconnection
   const handleWalletAction = () => {
     if (isConnected) {
       disconnect();
       toast({
-        title: 'Кошелек отключен',
-        description: 'Ваш кошелек был успешно отключен',
+        title: 'Wallet disconnected',
+        description: 'Your wallet has been successfully disconnected',
       });
     } else {
-      // Открыть модальное окно Web3Modal
+      // Open Web3Modal
       const injected = connectors.find((c) => c.id === 'injected');
       if (injected?.ready) {
         connect({ connector: injected });
       } else {
-        // Открываем Web3Modal через глобальный метод
+        // Open Web3Modal using global method
         const w3mEvent = new Event('w3m-open-modal');
         document.dispatchEvent(w3mEvent);
       }
     }
   };
 
-  // Сокращение адреса для отображения
+  // Shorten address for display
   const shortenAddress = (addr: string | undefined) => {
     if (!addr) return '';
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
-  // Не рендерим на стороне сервера
+  // Don't render on server-side
   if (!mounted) return null;
 
   return (

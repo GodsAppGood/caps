@@ -269,7 +269,7 @@ const AICapsuleWidget = () => {
               {/* Minimum Bid */}
               {allowBidding && (
                 <div className="space-y-2">
-                  <label className="text-sm text-neon-blue font-medium">MINIMUM BID (SOL)</label>
+                  <label className="text-sm text-neon-blue font-medium">MINIMUM BID (BNB)</label>
                   <div className="relative">
                     <Input
                       type="number"

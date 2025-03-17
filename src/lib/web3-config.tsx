@@ -1,27 +1,27 @@
 
 import { configureChains, createConfig } from 'wagmi';
-import { mainnet, polygon } from 'wagmi/chains';
+import { mainnet, bsc } from 'wagmi/chains';
 import { EthereumClient, w3mConnectors, w3mProvider } from '@web3modal/ethereum';
 import { Web3Modal } from '@web3modal/react';
 
-// Замените на ваш реальный Project ID из WalletConnect Cloud
+// Replace with your real Project ID from WalletConnect Cloud
 const projectId = 'YOUR_PROJECT_ID';
 
-// Настройка поддерживаемых цепей
-const chains = [mainnet, polygon];
+// Configure supported chains
+const chains = [mainnet, bsc];
 const { publicClient } = configureChains(chains, [w3mProvider({ projectId })]);
 
-// Конфигурация Wagmi
+// Wagmi configuration
 export const wagmiConfig = createConfig({
   autoConnect: true,
   connectors: w3mConnectors({ projectId, chains }),
   publicClient,
 });
 
-// Создание клиента Ethereum для Web3Modal
+// Create Ethereum client for Web3Modal
 export const ethereumClient = new EthereumClient(wagmiConfig, chains);
 
-// Компонент модального окна Web3Modal
+// Web3Modal component
 export const Web3ModalComponent = () => {
   return (
     <Web3Modal

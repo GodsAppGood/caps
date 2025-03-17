@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Timer, Star, Lock, DollarSign, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -73,16 +72,16 @@ const Index = () => {
   const handlePlaceBid = () => {
     if (!betAmount || parseFloat(betAmount) <= 0) {
       toast({
-        title: "Ошибка",
-        description: "Пожалуйста, введите корректную сумму ставки",
+        title: "Error",
+        description: "Please enter a valid bid amount",
         variant: "destructive",
       });
       return;
     }
     
     toast({
-      title: "Ставка размещена",
-      description: `Ваша ставка ${betAmount} SOL на капсулу #${selectedCapsule?.toString().padStart(3, '0')} успешно размещена`,
+      title: "Bid placed",
+      description: `Your bid of ${betAmount} BNB on capsule #${selectedCapsule?.toString().padStart(3, '0')} has been successfully placed`,
     });
     
     setBetAmount("");
@@ -163,7 +162,7 @@ const Index = () => {
                 <div className="absolute bottom-24 left-0 right-0 flex justify-center">
                   <div className="px-4 py-2 bg-space-dark/50 rounded-full border border-neon-pink/30">
                     <span className="text-neon-pink text-sm flex items-center">
-                      <DollarSign className="w-4 h-4 mr-1" /> TOP BID: {capsule.highestBid} SOL
+                      <DollarSign className="w-4 h-4 mr-1" /> TOP BID: {capsule.highestBid} BNB
                     </span>
                   </div>
                 </div>
@@ -237,7 +236,7 @@ const Index = () => {
                 <div className="absolute bottom-24 left-0 right-0 flex justify-center">
                   <div className="px-4 py-2 bg-space-dark/50 rounded-full border border-neon-pink/30">
                     <span className="text-neon-pink text-sm flex items-center">
-                      <DollarSign className="w-4 h-4 mr-1" /> TOP BID: {capsule.highestBid} SOL
+                      <DollarSign className="w-4 h-4 mr-1" /> TOP BID: {capsule.highestBid} BNB
                     </span>
                   </div>
                 </div>
@@ -275,7 +274,7 @@ const Index = () => {
           <div className="space-y-8 py-6">
             {/* Bid Input */}
             <div className="space-y-4">
-              <label className="text-sm text-neon-pink font-medium">BID AMOUNT (SOL)</label>
+              <label className="text-sm text-neon-pink font-medium">BID AMOUNT (BNB)</label>
               <div className="relative">
                 <Input
                   type="number"
