@@ -1,3 +1,4 @@
+
 import { ethers } from 'ethers';
 import { create } from 'ipfs-http-client';
 import { toast } from 'sonner';
@@ -32,17 +33,21 @@ const CONTRACT_ABI = [
 const getContract = async () => {
   try {
     // Check if window.ethereum is available
-    if (!window.ethereum) {
+    if (typeof window !== 'undefined' && !window.ethereum) {
       throw new Error("Ethereum provider not found. Please install a wallet like MetaMask.");
     }
 
     // Connect to the provider
-    await window.ethereum.request({ method: 'eth_requestAccounts' });
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
+    if (typeof window !== 'undefined' && window.ethereum) {
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      
+      // Create contract instance
+      return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+    }
     
-    // Create contract instance
-    return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+    return null;
   } catch (error) {
     console.error("Error getting contract:", error);
     toast.error("Failed to connect to blockchain. Please check your wallet connection.");
