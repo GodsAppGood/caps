@@ -13,11 +13,11 @@ import {
   ChevronRight, 
   ChevronLeft, 
   Star, 
-  Twitter, 
-  MessageSquare, 
+  Twitter,
+  MessageSquare,
   ArrowDown, 
   Circle, 
-  Share2, 
+  Share2,
   MessageCircle,
   ArrowLeft,
   Bell,
@@ -37,7 +37,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { TwitterLoginButton } from "@/components/TwitterLoginButton";
 import { WalletConnect } from "@/components/WalletConnect";
 
 const Index = () => {
