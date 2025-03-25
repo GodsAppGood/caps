@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,11 +13,11 @@ import {
   ChevronLeft,
   Star,
   Twitter,
-  Discord,
-  Telegram,
+  MessageSquare,
   ArrowDown,
   Circle,
-  MessageSquare,
+  Share2,
+  MessageCircle,
 } from "lucide-react";
 import {
   Card,
@@ -513,10 +512,10 @@ const Index = () => {
                 <Twitter size={24} />
               </a>
               <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-neon-blue transition-colors">
-                <Discord size={24} />
+                <MessageCircle size={24} />
               </a>
               <a href="https://telegram.org" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-neon-blue transition-colors">
-                <Telegram size={24} />
+                <Share2 size={24} />
               </a>
             </div>
           </div>
