@@ -7,14 +7,26 @@ export type Capsule = {
   creator_id: string;
   image_url?: string | null;
   message?: string | null;
-  unlock_date: string;
+  open_date: string;
   auction_enabled: boolean;
   status: 'open' | 'closed';
-  highest_bid: number;
-  highest_bidder?: string | null;
+  current_bid: number;
+  initial_bid: number;
+  highest_bidder_id?: string | null;
   created_at: string;
   updated_at: string;
   creator?: {
+    username?: string;
+  };
+};
+
+export type CapsuleBid = {
+  id: string;
+  capsule_id: string;
+  bidder_id: string;
+  bid_amount: number;
+  created_at: string;
+  bidder?: {
     username?: string;
   };
 };
@@ -24,11 +36,11 @@ export type CapsuleCreate = {
   creator_id: string;
   image_url?: string | null;
   message?: string | null;
-  unlock_date: string;
+  open_date: string;
   auction_enabled: boolean;
   status?: 'open' | 'closed';
-  highest_bid?: number;
-  highest_bidder?: string | null;
+  current_bid?: number;
+  highest_bidder_id?: string | null;
 };
 
 export const createCapsule = async (capsuleData: CapsuleCreate) => {
@@ -40,11 +52,12 @@ export const createCapsule = async (capsuleData: CapsuleCreate) => {
         creator_id: capsuleData.creator_id,
         image_url: capsuleData.image_url,
         message: capsuleData.message,
-        unlock_date: capsuleData.unlock_date,
+        open_date: capsuleData.open_date,
         auction_enabled: capsuleData.auction_enabled,
         created_at: new Date().toISOString(),
         status: 'open',
         current_bid: 0,
+        initial_bid: 0.1,
         highest_bidder_id: null
       })
       .select()
@@ -163,7 +176,7 @@ export const getUserCapsules = async (userId: string): Promise<Capsule[]> => {
 };
 
 // Get bids for a specific capsule
-export const getCapsuleBids = async (capsuleId: string) => {
+export const getCapsuleBids = async (capsuleId: string): Promise<CapsuleBid[]> => {
   try {
     const { data, error } = await supabase
       .from('capsule_bids')
@@ -191,24 +204,12 @@ export const getCapsuleBids = async (capsuleId: string) => {
 // Accept a bid for a capsule
 export const acceptBid = async (capsuleId: string, bidId: string) => {
   try {
-    // Update the bid to mark it as accepted
-    const { error: bidError } = await supabase
-      .from('capsule_bids')
-      .update({ is_accepted: true })
-      .eq('id', bidId)
-      .eq('capsule_id', capsuleId);
-
-    if (bidError) {
-      console.error("Error accepting bid:", bidError);
-      throw bidError;
-    }
-
     // Update capsule status to closed
     const { data: capsuleData, error: capsuleError } = await supabase
       .from('capsules')
       .update({ 
         status: 'closed',
-        unlock_date: new Date().toISOString() // Immediately unlock the capsule
+        open_date: new Date().toISOString() // Immediately unlock the capsule
       })
       .eq('id', capsuleId)
       .select()
