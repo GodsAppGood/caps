@@ -1,14 +1,14 @@
 
 import { configureChains, createConfig } from 'wagmi';
-import { mainnet, bsc } from 'wagmi/chains';
+import { mainnet, bsc, bscTestnet } from 'wagmi/chains';
 import { EthereumClient, w3mConnectors, w3mProvider } from '@web3modal/ethereum';
 import { Web3Modal } from '@web3modal/react';
 
 // Replace with your real Project ID from WalletConnect Cloud
 const projectId = 'YOUR_PROJECT_ID';
 
-// Configure supported chains
-const chains = [mainnet, bsc];
+// Configure supported chains (adding BSC Testnet for development)
+const chains = [mainnet, bsc, bscTestnet];
 const { publicClient } = configureChains(chains, [w3mProvider({ projectId })]);
 
 // Wagmi configuration

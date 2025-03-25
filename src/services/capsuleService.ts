@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { createCapsuleWithPayment } from "@/lib/contractHelpers";
 
 export type Capsule = {
   id: string;
@@ -15,29 +15,46 @@ export type Capsule = {
   encryption_level: 'standard' | 'enhanced' | 'quantum';
   created_at: string;
   updated_at: string;
+  creator?: {
+    id: string;
+    username?: string;
+    avatar_url?: string;
+  };
+  winner?: {
+    id: string;
+    username?: string;
+    avatar_url?: string;
+  };
 };
 
-export type CapsuleCreate = Omit<Capsule, 'id' | 'creator_id' | 'status' | 'created_at' | 'updated_at'>;
+export type CapsuleCreate = Omit<Capsule, 'id' | 'creator_id' | 'status' | 'created_at' | 'updated_at' | 'creator' | 'winner'>;
 
-// Create a new capsule
-export const createCapsule = async (capsuleData: CapsuleCreate) => {
-  const { user } = useAuth();
-  
-  if (!user) {
-    throw new Error("User must be authenticated to create a capsule");
+// Create a new capsule with blockchain payment
+export const createCapsule = async (capsuleData: CapsuleCreate, userId: string) => {
+  // First, process the blockchain payment
+  const paymentSuccess = await createCapsuleWithPayment(
+    capsuleData.name,
+    capsuleData.open_date,
+    capsuleData.initial_bid,
+    capsuleData.encryption_level
+  );
+
+  if (!paymentSuccess) {
+    throw new Error("Payment failed. Capsule not created.");
   }
   
+  // Then, store the data in Supabase
   const { data, error } = await supabase
     .from('capsules')
     .insert({
       ...capsuleData,
-      creator_id: user.id,
+      creator_id: userId,
     })
     .select()
     .single();
   
   if (error) {
-    console.error("Error creating capsule:", error);
+    console.error("Error creating capsule in database:", error);
     throw error;
   }
   
@@ -50,15 +67,15 @@ export const getAllCapsules = async () => {
     .from('capsules')
     .select(`
       *,
-      creator:creator_id(
+      creator:profiles!creator_id(
         id,
-        avatar_url,
-        username
+        username,
+        avatar_url
       ),
-      winner:winner_id(
+      winner:profiles!winner_id(
         id,
-        avatar_url,
-        username
+        username,
+        avatar_url
       )
     `)
     .order('created_at', { ascending: false });
@@ -81,15 +98,15 @@ export const getTodayCapsules = async () => {
     .from('capsules')
     .select(`
       *,
-      creator:creator_id(
+      creator:profiles!creator_id(
         id,
-        avatar_url,
-        username
+        username,
+        avatar_url
       ),
-      winner:winner_id(
+      winner:profiles!winner_id(
         id,
-        avatar_url,
-        username
+        username,
+        avatar_url
       )
     `)
     .gte('open_date', startOfDay)
@@ -110,15 +127,15 @@ export const getUserCapsules = async (userId: string) => {
     .from('capsules')
     .select(`
       *,
-      creator:creator_id(
+      creator:profiles!creator_id(
         id,
-        avatar_url,
-        username
+        username,
+        avatar_url
       ),
-      winner:winner_id(
+      winner:profiles!winner_id(
         id,
-        avatar_url,
-        username
+        username,
+        avatar_url
       )
     `)
     .eq('creator_id', userId)
@@ -138,15 +155,15 @@ export const getCapsuleById = async (id: string) => {
     .from('capsules')
     .select(`
       *,
-      creator:creator_id(
+      creator:profiles!creator_id(
         id,
-        avatar_url,
-        username
+        username,
+        avatar_url
       ),
-      winner:winner_id(
+      winner:profiles!winner_id(
         id,
-        avatar_url,
-        username
+        username,
+        avatar_url
       )
     `)
     .eq('id', id)

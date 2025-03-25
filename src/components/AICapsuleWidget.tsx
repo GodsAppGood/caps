@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -69,7 +70,7 @@ const AICapsuleWidget = () => {
     try {
       setIsLoading(true);
       
-      // Create the capsule in Supabase
+      // Create the capsule in Supabase with blockchain payment
       await createCapsule({
         name: eventName,
         open_date: selectedDate.toISOString(),
@@ -78,11 +79,11 @@ const AICapsuleWidget = () => {
         image_url: selectedImage || undefined,
         encryption_level: encryptionLevel,
         winner_id: undefined,
-      });
+      }, user.id);
 
       toast({
         title: "Success",
-        description: "Your time capsule has been created successfully!",
+        description: "Your time capsule has been created successfully with payment of 0.01 BNB!",
       });
 
       // Reset form
