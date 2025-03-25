@@ -1,20 +1,20 @@
 
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { CalendarIcon, Image, MessageSquare, Clock, Check, Coins } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { createCapsule } from "@/services/capsuleService";
 import { createCapsuleWithPayment } from "@/lib/contractHelpers";
+
+// Import sub-components
+import CapsuleNameInput from "./capsule/CapsuleNameInput";
+import CapsuleMessageInput from "./capsule/CapsuleMessageInput";
+import CapsuleImageUpload from "./capsule/CapsuleImageUpload";
+import CapsuleDatePicker from "./capsule/CapsuleDatePicker";
+import CapsulePaymentMethod from "./capsule/CapsulePaymentMethod";
+import CapsuleAuctionToggle from "./capsule/CapsuleAuctionToggle";
+import CreateCapsuleButton from "./capsule/CreateCapsuleButton";
 
 interface CreateCapsuleModalProps {
   isOpen: boolean;
@@ -44,6 +44,11 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const resetImage = () => {
+    setSelectedImage(null);
+    setPreviewUrl(null);
   };
 
   const resetForm = () => {
@@ -162,158 +167,22 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          <div className="space-y-2">
-            <Label className="text-sm text-neon-blue font-medium">CAPSULE NAME</Label>
-            <Input
-              placeholder="Enter capsule name..."
-              value={capsuleName}
-              onChange={(e) => setCapsuleName(e.target.value)}
-              className="bg-space-light/30 border-neon-blue/20 text-white placeholder:text-white/50 focus:border-neon-blue"
-            />
-            <p className="text-xs text-white/70">This name will be visible to everyone immediately</p>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm text-neon-blue font-medium">MESSAGE</Label>
-            <Textarea
-              placeholder="Write your message... (hidden until unlock)"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="min-h-[100px] bg-space-light/30 border-neon-blue/20 text-white placeholder:text-white/50 focus:border-neon-blue resize-none"
-            />
-            <div className="flex items-center gap-2 text-white/70">
-              <MessageSquare className="w-4 h-4 text-neon-blue" />
-              <span className="text-xs">This message will be hidden until the capsule is unlocked</span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm text-neon-blue font-medium">CAPSULE IMAGE</Label>
-            <div className="relative h-40 border-2 border-dashed border-neon-blue/20 rounded-lg overflow-hidden group hover:border-neon-blue/40 transition-colors">
-              {previewUrl ? (
-                <div className="relative h-full">
-                  <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => {
-                      setSelectedImage(null);
-                      setPreviewUrl(null);
-                    }}
-                    className="absolute top-2 right-2 bg-red-500/80 text-white px-2 py-1 rounded-md text-sm hover:bg-red-600/80 transition-colors"
-                  >
-                    Remove
-                  </button>
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <p className="text-white text-sm px-4 py-2 bg-space-dark/80 rounded-md">Hidden until unlock</p>
-                  </div>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center h-full cursor-pointer">
-                  <Image className="w-8 h-8 text-neon-blue mb-2 group-hover:scale-110 transition-transform" />
-                  <span className="text-neon-blue text-sm">Click to upload image (hidden until unlock)</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-sm text-neon-blue font-medium">UNLOCK DATE</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start bg-space-light/30 border-neon-blue/20 text-white hover:bg-space-light/50 hover:border-neon-blue"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4 text-neon-blue" />
-                  {selectedDate ? format(selectedDate, "PPP") : "Select unlock date..."}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-space-dark border-neon-blue/20 z-50">
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={setSelectedDate}
-                  className="bg-transparent text-white"
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <div className="flex items-center gap-2 text-white/70">
-              <Clock className="w-4 h-4 text-neon-blue" />
-              <span className="text-xs">The unlock date will be visible to everyone immediately</span>
-            </div>
-          </div>
+          <CapsuleNameInput capsuleName={capsuleName} setCapsuleName={setCapsuleName} />
+          <CapsuleMessageInput message={message} setMessage={setMessage} />
+          <CapsuleImageUpload 
+            previewUrl={previewUrl} 
+            handleImageUpload={handleImageUpload} 
+            resetImage={resetImage}
+          />
+          <CapsuleDatePicker selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
 
           <div className="space-y-4 pt-4 border-t border-neon-blue/20">
-            <div className="space-y-2">
-              <Label className="text-sm text-neon-blue font-medium">PAYMENT METHOD</Label>
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  onClick={() => setPaymentMethod(0)}
-                  className={`flex-1 flex justify-between items-center ${
-                    paymentMethod === 0 
-                      ? "bg-gradient-to-r from-neon-blue to-neon-blue/70 text-white" 
-                      : "bg-space-light/20 text-white/70 hover:bg-space-light/30"
-                  }`}
-                >
-                  <span>BNB</span>
-                  <span className="font-medium">0.01 BNB</span>
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setPaymentMethod(1)}
-                  className={`flex-1 flex justify-between items-center ${
-                    paymentMethod === 1 
-                      ? "bg-gradient-to-r from-neon-pink to-neon-pink/70 text-white" 
-                      : "bg-space-light/20 text-white/70 hover:bg-space-light/30"
-                  }`}
-                >
-                  <span>ETH</span>
-                  <span className="font-medium">0.005 ETH</span>
-                </Button>
-              </div>
-              <div className="flex items-center gap-2 text-white/70">
-                <Coins className="w-4 h-4 text-neon-blue" />
-                <span className="text-xs">Choose your preferred payment method for creating this capsule</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between border-t border-neon-blue/20 pt-4">
-              <div className="space-y-1">
-                <Label htmlFor="auction-enable" className="text-sm text-neon-blue font-medium">ENABLE AUCTION</Label>
-                <p className="text-xs text-white/70">Let others bid to open your capsule early</p>
-              </div>
-              <Switch 
-                id="auction-enable" 
-                checked={auctionEnabled} 
-                onCheckedChange={setAuctionEnabled} 
-                className="data-[state=checked]:bg-neon-blue"
-              />
-            </div>
+            <CapsulePaymentMethod paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod} />
+            <CapsuleAuctionToggle auctionEnabled={auctionEnabled} setAuctionEnabled={setAuctionEnabled} />
           </div>
         </div>
 
-        <Button
-          className="w-full bg-gradient-to-r from-neon-blue to-neon-pink text-white hover:opacity-90 transition-opacity"
-          onClick={handleCreateCapsule}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <span className="flex items-center">
-              <span className="animate-spin mr-2">⟳</span> CREATING...
-            </span>
-          ) : (
-            <span className="flex items-center">
-              <Check className="mr-2 h-5 w-5" /> CREATE CAPSULE
-            </span>
-          )}
-        </Button>
+        <CreateCapsuleButton isLoading={isLoading} onClick={handleCreateCapsule} />
       </DialogContent>
     </Dialog>
   );
