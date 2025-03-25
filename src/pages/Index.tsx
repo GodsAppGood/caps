@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Timer, Star, Lock, DollarSign, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { getAllCapsules, getTodayCapsules, Capsule } from "@/services/capsuleService";
+import { getAllCapsules, getTodayCapsules, Capsule, placeBid } from "@/services/capsuleService";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
@@ -40,7 +39,8 @@ const Index = () => {
             avatar: capsule.creator?.avatar_url || "", 
             verified: true 
           },
-          highestBid: capsule.initial_bid
+          highestBid: capsule.initial_bid,
+          current_bid: capsule.current_bid || capsule.initial_bid
         }));
         
         const formattedAllCapsules = allData.map((capsule) => ({
@@ -52,7 +52,7 @@ const Index = () => {
             avatar: capsule.creator?.avatar_url || "", 
             verified: true 
           },
-          highestBid: capsule.initial_bid
+          highestBid: capsule.current_bid || capsule.initial_bid
         }));
         
         setTodayCapsules(formattedTodayCapsules);
@@ -72,7 +72,7 @@ const Index = () => {
     fetchCapsules();
   }, [toast]);
 
-  const handlePlaceBid = () => {
+  const handlePlaceBid = async () => {
     if (!user) {
       toast({
         title: "Authentication Required",
@@ -82,7 +82,7 @@ const Index = () => {
       return;
     }
 
-    if (!betAmount || parseFloat(betAmount) <= 0) {
+    if (!selectedCapsule || !betAmount || parseFloat(betAmount) <= 0) {
       toast({
         title: "Error",
         description: "Please enter a valid bid amount",
@@ -90,14 +90,76 @@ const Index = () => {
       });
       return;
     }
-    
-    toast({
-      title: "Bid placed",
-      description: `Your bid of ${betAmount} BNB on capsule #${selectedCapsule?.toString().padStart(3, '0')} has been successfully placed`,
-    });
-    
-    setBetAmount("");
-    setSelectedCapsule(null);
+
+    try {
+      // Get the capsule that's being bid on
+      const capsule = [...todayCapsules, ...allCapsules].find(c => c.id === selectedCapsule);
+      
+      if (!capsule) {
+        throw new Error("Capsule not found");
+      }
+
+      const currentHighestBid = parseFloat(capsule.highestBid);
+      const minimumBid = currentHighestBid * 1.1; // 10% higher than current bid
+      const bidAmount = parseFloat(betAmount);
+
+      // Check if bid is at least 10% higher than current highest bid
+      if (bidAmount < minimumBid) {
+        toast({
+          title: "Bid too low",
+          description: `Your bid must be at least ${minimumBid.toFixed(2)} BNB (10% higher than current bid)`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Place bid
+      await placeBid(selectedCapsule, bidAmount, user.id);
+      
+      toast({
+        title: "Bid placed",
+        description: `Your bid of ${betAmount} BNB on capsule #${selectedCapsule.toString().padStart(3, '0')} has been successfully placed`,
+      });
+      
+      // Refresh capsules to show updated bids
+      const todayData = await getTodayCapsules();
+      const allData = await getAllCapsules();
+      
+      // Update state with fresh data
+      setTodayCapsules(todayData.map(capsule => ({
+        id: capsule.id,
+        name: capsule.name,
+        openTime: new Date(capsule.open_date).toLocaleTimeString(),
+        creator: { 
+          name: capsule.creator?.username || "ANONYMOUS", 
+          avatar: capsule.creator?.avatar_url || "", 
+          verified: true 
+        },
+        highestBid: capsule.current_bid || capsule.initial_bid
+      })));
+      
+      setAllCapsules(allData.map(capsule => ({
+        id: capsule.id,
+        name: capsule.name,
+        openDate: new Date(capsule.open_date).toLocaleDateString(),
+        creator: { 
+          name: capsule.creator?.username || "ANONYMOUS", 
+          avatar: capsule.creator?.avatar_url || "", 
+          verified: true 
+        },
+        highestBid: capsule.current_bid || capsule.initial_bid
+      })));
+      
+      setBetAmount("");
+      setSelectedCapsule(null);
+    } catch (error: any) {
+      console.error("Error placing bid:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to place bid",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -284,77 +346,5 @@ const Index = () => {
           </DialogHeader>
 
           <div className="space-y-8 py-6">
-            {/* Bid Input */}
-            <div className="space-y-4">
-              <label className="text-sm text-neon-pink font-medium">BID AMOUNT (BNB)</label>
-              <div className="relative">
-                <Input
-                  type="number"
-                  placeholder="100"
-                  value={betAmount}
-                  onChange={(e) => setBetAmount(e.target.value)}
-                  className="bg-space-light/30 border-neon-pink/20 text-white placeholder:text-white/50 focus:border-neon-pink pl-12"
-                />
-                <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-neon-pink" />
-              </div>
-            </div>
+            {/* Current
 
-            {/* Commission Info */}
-            <div className="text-center space-y-2 p-4 bg-space-light/20 rounded-lg border border-neon-blue/20">
-              <p className="text-sm text-neon-blue">
-                ONCE ACCEPTED, THE CAPSULE CREATOR WILL RECEIVE 98% OF THE BID.
-                <br/>PLATFORM FEE IS 2%.
-              </p>
-            </div>
-
-            {/* Place Bid Button */}
-            <Button
-              className="w-full py-4 rounded-lg bg-gradient-to-r from-neon-pink to-neon-blue text-white font-bold hover:opacity-90 transition-opacity"
-              onClick={handlePlaceBid}
-            >
-              PLACE BID
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Footer */}
-      <footer className="container mx-auto py-8 mt-16 border-t border-white/10">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-2xl font-bold">
-            <span className="text-neon-blue">CAPS</span>
-          </div>
-          <div className="flex gap-4">
-            <a href="#" className="hover:text-neon-blue transition-colors">TWITTER</a>
-            <a href="#" className="hover:text-neon-blue transition-colors">DISCORD</a>
-            <a href="#" className="hover:text-neon-blue transition-colors">TELEGRAM</a>
-          </div>
-          <p className="text-white/60">© 2024 CAPS. ALL RIGHTS RESERVED.</p>
-        </div>
-      </footer>
-
-      {/* Animated Background */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute inset-0 bg-space-gradient" />
-        {[...Array(50)].map((_, i) => (
-          <Star
-            key={i}
-            className="absolute text-white/20 animate-stars"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 20}s`,
-              width: `${Math.random() * 3}px`,
-              height: `${Math.random() * 3}px`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* AI Widget */}
-      <AICapsuleWidget />
-    </div>
-  );
-};
-
-export default Index;

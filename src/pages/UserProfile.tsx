@@ -9,49 +9,73 @@ import { Button } from "@/components/ui/button";
 import { WalletConnect } from "@/components/WalletConnect";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { getUserCapsules } from "@/services/capsuleService";
+import { getUserCapsules, getCapsuleBids, placeBid, acceptBid } from "@/services/capsuleService";
 
 const UserProfile = () => {
   const [selectedCapsule, setSelectedCapsule] = useState<number | null>(null);
   const [acceptBidCapsule, setAcceptBidCapsule] = useState<number | null>(null);
   const [betAmount, setBetAmount] = useState("");
   const [userCapsules, setUserCapsules] = useState<any[]>([]);
+  const [bidRequests, setBidRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user, signOut } = useAuth();
 
-  // Sample data for bid requests
-  const bidRequests = [
-    { id: 1, capsuleId: 2, capsuleName: "COSMIC THOUGHTS", bidder: "0x1a2...3b4c", amount: 2.8, timestamp: "2 hours ago" },
-    { id: 2, capsuleId: 1, capsuleName: "STELLAR MEMORIES", bidder: "0x5d6...7e8f", amount: 1.5, timestamp: "8 hours ago" },
-    { id: 3, capsuleId: 3, capsuleName: "SPACE DREAMS", bidder: "0x9a0...1b2c", amount: 0.75, timestamp: "1 day ago" },
-  ];
-
   useEffect(() => {
-    const fetchUserCapsules = async () => {
+    const fetchUserData = async () => {
       if (!user) return;
       
       try {
         setIsLoading(true);
         
         // Fetch capsules created by the current user
-        const data = await getUserCapsules(user.id);
+        const capsules = await getUserCapsules(user.id);
         
-        // Format the data for display
-        const formattedCapsules = data.map((capsule) => ({
+        // Format capsules for display
+        const formattedCapsules = capsules.map((capsule) => ({
           id: capsule.id,
           name: capsule.name,
           openDate: new Date(capsule.open_date).toLocaleDateString(),
-          highestBid: capsule.initial_bid,
-          bids: 0 // Currently not tracking bids
+          highestBid: capsule.current_bid || capsule.initial_bid,
+          bids: 0 // This will be updated when we fetch bids
         }));
         
         setUserCapsules(formattedCapsules);
+        
+        // Fetch bids for each capsule
+        const allBidRequests: any[] = [];
+        for (const capsule of capsules) {
+          const bids = await getCapsuleBids(capsule.id);
+          if (bids.length > 0) {
+            // Group bids by capsule and only get the highest bid per bidder
+            const uniqueBidders = new Map();
+            bids.forEach(bid => {
+              if (!uniqueBidders.has(bid.bidder_id) || bid.amount > uniqueBidders.get(bid.bidder_id).amount) {
+                uniqueBidders.set(bid.bidder_id, bid);
+              }
+            });
+            
+            // Convert highest bids to the format needed for display
+            uniqueBidders.forEach(bid => {
+              allBidRequests.push({
+                id: bid.id,
+                capsuleId: capsule.id,
+                capsuleName: capsule.name,
+                bidder: bid.bidder?.username || "ANONYMOUS",
+                bidderWallet: `0x${bid.bidder_id.slice(0, 4)}...${bid.bidder_id.slice(-4)}`,
+                amount: bid.amount,
+                timestamp: new Date(bid.created_at).toLocaleDateString()
+              });
+            });
+          }
+        }
+        
+        setBidRequests(allBidRequests);
       } catch (error) {
-        console.error("Error fetching user capsules:", error);
+        console.error("Error fetching user data:", error);
         toast({
           title: "Error",
-          description: "Failed to load your capsules",
+          description: "Failed to load your data",
           variant: "destructive",
         });
       } finally {
@@ -59,18 +83,61 @@ const UserProfile = () => {
       }
     };
     
-    fetchUserCapsules();
+    fetchUserData();
   }, [user, toast]);
 
-  const handleAcceptBid = () => {
-    toast({
-      title: "Bid Accepted",
-      description: "You have accepted the bid. The capsule will be opened for the bidder.",
-    });
-    setAcceptBidCapsule(null);
+  const handleAcceptBid = async () => {
+    if (!acceptBidCapsule) return;
+    
+    try {
+      const bidRequest = bidRequests.find(request => request.capsuleId === acceptBidCapsule);
+      if (!bidRequest) {
+        throw new Error("Bid request not found");
+      }
+      
+      // Accept the bid in the database
+      await acceptBid(acceptBidCapsule, bidRequest.id);
+      
+      toast({
+        title: "Bid Accepted",
+        description: "You have accepted the bid. The capsule will be opened for the bidder.",
+      });
+      
+      // Refresh data
+      if (user) {
+        const capsules = await getUserCapsules(user.id);
+        setUserCapsules(capsules.map(capsule => ({
+          id: capsule.id,
+          name: capsule.name,
+          openDate: new Date(capsule.open_date).toLocaleDateString(),
+          highestBid: capsule.current_bid || capsule.initial_bid,
+          bids: 0
+        })));
+        
+        // Remove accepted bid from requests
+        setBidRequests(bidRequests.filter(request => request.id !== bidRequest.id));
+      }
+      
+      setAcceptBidCapsule(null);
+    } catch (error: any) {
+      console.error("Error accepting bid:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to accept bid",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleRejectBid = () => {
+  const handleRejectBid = async () => {
+    // For now, just remove from UI
+    if (!acceptBidCapsule) return;
+    
+    const bidRequest = bidRequests.find(request => request.capsuleId === acceptBidCapsule);
+    if (bidRequest) {
+      setBidRequests(bidRequests.filter(request => request.id !== bidRequest.id));
+    }
+    
     toast({
       title: "Bid Rejected",
       description: "You have rejected the bid. The capsule remains locked.",
@@ -78,8 +145,17 @@ const UserProfile = () => {
     setAcceptBidCapsule(null);
   };
 
-  const handlePlaceBid = () => {
-    if (!betAmount || parseFloat(betAmount) <= 0) {
+  const handlePlaceBid = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to place a bid",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedCapsule || !betAmount || parseFloat(betAmount) <= 0) {
       toast({
         title: "Error",
         description: "Please enter a valid bid amount",
@@ -88,13 +164,58 @@ const UserProfile = () => {
       return;
     }
     
-    toast({
-      title: "Bid Placed",
-      description: `Your bid of ${betAmount} SOL on capsule #${selectedCapsule?.toString().padStart(3, '0')} has been placed successfully`,
-    });
-    
-    setBetAmount("");
-    setSelectedCapsule(null);
+    try {
+      // Get the capsule
+      const capsule = userCapsules.find(c => c.id === selectedCapsule);
+      if (!capsule) {
+        throw new Error("Capsule not found");
+      }
+      
+      const currentHighestBid = parseFloat(capsule.highestBid);
+      const minimumBid = currentHighestBid * 1.1; // 10% higher
+      const bidAmount = parseFloat(betAmount);
+      
+      // Check if bid meets minimum
+      if (bidAmount < minimumBid) {
+        toast({
+          title: "Bid too low",
+          description: `Bid must be at least ${minimumBid.toFixed(2)} BNB (10% higher than current bid)`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Place the bid
+      await placeBid(selectedCapsule, bidAmount, user.id);
+      
+      toast({
+        title: "Bid Placed",
+        description: `Your bid of ${betAmount} BNB on capsule #${selectedCapsule.toString().padStart(3, '0')} has been placed successfully`,
+      });
+      
+      // Reset state
+      setBetAmount("");
+      setSelectedCapsule(null);
+      
+      // Refresh data
+      if (user) {
+        const capsules = await getUserCapsules(user.id);
+        setUserCapsules(capsules.map(capsule => ({
+          id: capsule.id,
+          name: capsule.name,
+          openDate: new Date(capsule.open_date).toLocaleDateString(),
+          highestBid: capsule.current_bid || capsule.initial_bid,
+          bids: 0
+        })));
+      }
+    } catch (error: any) {
+      console.error("Error placing bid:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to place bid",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSignOut = async () => {
@@ -208,7 +329,7 @@ const UserProfile = () => {
                       <div className="px-4 py-2 bg-space-dark/50 rounded-full border border-neon-blue/30">
                         <span className="text-neon-blue text-sm flex items-center">
                           <DollarSign className="w-4 h-4 mr-1" />
-                          HIGHEST BID: {capsule.highestBid} SOL ({capsule.bids} bids)
+                          HIGHEST BID: {capsule.highestBid} BNB ({capsule.bids} bids)
                         </span>
                       </div>
                     </div>
@@ -238,12 +359,12 @@ const UserProfile = () => {
                       <h3 className="text-xl font-bold mb-1">{request.capsuleName}</h3>
                       <div className="flex flex-wrap gap-4 text-sm mb-2">
                         <span className="text-white/70">ID: #{request.capsuleId.toString().padStart(3, '0')}</span>
-                        <span className="text-white/70">Bidder: {request.bidder}</span>
+                        <span className="text-white/70">Bidder: {request.bidderWallet}</span>
                         <span className="text-white/70">{request.timestamp}</span>
                       </div>
                       <div className="flex items-center text-neon-pink font-bold">
                         <DollarSign className="w-5 h-5 mr-1" />
-                        <span>{request.amount} SOL</span>
+                        <span>{request.amount} BNB</span>
                       </div>
                     </div>
                     <div className="flex gap-3">
@@ -298,7 +419,7 @@ const UserProfile = () => {
                     <p className="text-sm text-white/70">GALAXY WHISPERS • 1 week ago</p>
                     <p className="text-neon-pink flex items-center mt-1">
                       <DollarSign className="w-4 h-4 mr-1" />
-                      3.5 SOL
+                      3.5 BNB
                     </p>
                   </div>
                 </div>
@@ -337,10 +458,10 @@ const UserProfile = () => {
                 <p className="text-sm text-neon-blue mb-2">BID AMOUNT</p>
                 <p className="text-3xl font-bold flex items-center justify-center">
                   <DollarSign className="w-6 h-6 mr-1" />
-                  {bidRequests.find(bid => bid.capsuleId === acceptBidCapsule)?.amount || 0} SOL
+                  {bidRequests.find(bid => bid.capsuleId === acceptBidCapsule)?.amount || 0} BNB
                 </p>
                 <p className="text-xs text-white/60 mt-2">
-                  You will receive {((bidRequests.find(bid => bid.capsuleId === acceptBidCapsule)?.amount || 0) * 0.98).toFixed(2)} SOL (98%)
+                  You will receive {((bidRequests.find(bid => bid.capsuleId === acceptBidCapsule)?.amount || 0) * 0.98).toFixed(2)} BNB (98%)
                 </p>
               </div>
 
@@ -373,13 +494,34 @@ const UserProfile = () => {
             </DialogHeader>
 
             <div className="space-y-8 py-6">
+              {/* Current Highest Bid Info */}
+              {selectedCapsule && (
+                <div className="p-4 rounded-lg bg-space-light/20 border border-neon-pink/30 text-center">
+                  <p className="text-sm text-neon-pink mb-2">CURRENT HIGHEST BID</p>
+                  <p className="text-2xl font-bold text-white flex items-center justify-center">
+                    <DollarSign className="w-5 h-5 mr-1" />
+                    {(() => {
+                      const capsule = userCapsules.find(c => c.id === selectedCapsule);
+                      return capsule ? capsule.highestBid : "0";
+                    })()} BNB
+                  </p>
+                  <p className="text-xs text-white/60 mt-2">
+                    Minimum next bid: {(() => {
+                      const capsule = userCapsules.find(c => c.id === selectedCapsule);
+                      const currentBid = capsule ? parseFloat(capsule.highestBid) : 0;
+                      return (currentBid * 1.1).toFixed(2);
+                    })()} BNB (10% higher)
+                  </p>
+                </div>
+              )}
+
               {/* Bid Input */}
               <div className="space-y-4">
-                <label className="text-sm text-neon-pink font-medium">BID AMOUNT (SOL)</label>
+                <label className="text-sm text-neon-pink font-medium">BID AMOUNT (BNB)</label>
                 <div className="relative">
                   <Input
                     type="number"
-                    placeholder="100"
+                    placeholder="Enter bid amount"
                     value={betAmount}
                     onChange={(e) => setBetAmount(e.target.value)}
                     className="bg-space-light/30 border-neon-pink/20 text-white placeholder:text-white/50 focus:border-neon-pink pl-12"
@@ -387,6 +529,28 @@ const UserProfile = () => {
                   <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-neon-pink" />
                 </div>
               </div>
+
+              {/* Auto Bid Button */}
+              {selectedCapsule && (
+                <Button
+                  variant="outline"
+                  className="w-full border-neon-blue text-neon-blue hover:bg-neon-blue/20"
+                  onClick={() => {
+                    const capsule = userCapsules.find(c => c.id === selectedCapsule);
+                    if (capsule) {
+                      const currentBid = parseFloat(capsule.highestBid);
+                      const minBid = (currentBid * 1.1).toFixed(2);
+                      setBetAmount(minBid);
+                    }
+                  }}
+                >
+                  AUTO BID (+10%): {(() => {
+                    const capsule = userCapsules.find(c => c.id === selectedCapsule);
+                    const currentBid = capsule ? parseFloat(capsule.highestBid) : 0;
+                    return (currentBid * 1.1).toFixed(2);
+                  })()} BNB
+                </Button>
+              )}
 
               {/* Commission Info */}
               <div className="text-center space-y-2 p-4 bg-space-light/20 rounded-lg border border-neon-blue/20">

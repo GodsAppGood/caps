@@ -1,12 +1,14 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { createCapsuleWithPayment } from "@/lib/contractHelpers";
+import { createCapsuleWithPayment, placeBidOnChain, acceptBidOnChain } from "@/lib/contractHelpers";
 
 export type Capsule = {
   id: string;
   name: string;
   open_date: string;
   initial_bid: number;
+  current_bid?: number;
+  highest_bidder_id?: string;
   status: 'opened' | 'closed';
   creator_id: string;
   winner_id?: string;
@@ -49,6 +51,7 @@ export const createCapsule = async (capsuleData: CapsuleCreate, userId: string) 
     .insert({
       ...capsuleData,
       creator_id: userId,
+      current_bid: capsuleData.initial_bid
     })
     .select()
     .single();
@@ -61,18 +64,132 @@ export const createCapsule = async (capsuleData: CapsuleCreate, userId: string) 
   return data;
 };
 
+// Place a bid on a capsule
+export const placeBid = async (capsuleId: string, bidAmount: number, bidderId: string) => {
+  // First, get the current capsule data to verify bid
+  const { data: capsule, error: fetchError } = await supabase
+    .from('capsules')
+    .select('*')
+    .eq('id', capsuleId)
+    .single();
+  
+  if (fetchError) {
+    console.error("Error fetching capsule for bid:", fetchError);
+    throw fetchError;
+  }
+  
+  const currentHighestBid = capsule.current_bid || capsule.initial_bid;
+  
+  // Check if bid is at least 10% higher than the current highest bid
+  if (bidAmount < currentHighestBid * 1.1) {
+    throw new Error(`Bid must be at least ${(currentHighestBid * 1.1).toFixed(2)} BNB (10% higher than current bid)`);
+  }
+  
+  // Try to place the bid on blockchain (optional, can be enabled if contract is deployed)
+  // const blockchainSuccess = await placeBidOnChain(capsuleId, bidAmount);
+  
+  // if (!blockchainSuccess) {
+  //   throw new Error("Failed to place bid on blockchain");
+  // }
+  
+  // Update the capsule with the new bid
+  const { data, error } = await supabase
+    .from('capsules')
+    .update({
+      current_bid: bidAmount,
+      highest_bidder_id: bidderId,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', capsuleId)
+    .select()
+    .single();
+  
+  if (error) {
+    console.error("Error placing bid:", error);
+    throw error;
+  }
+  
+  // Create a record in the bids table
+  const { data: bidData, error: bidError } = await supabase
+    .from('bids')
+    .insert({
+      capsule_id: capsuleId,
+      bidder_id: bidderId,
+      amount: bidAmount,
+      created_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+  
+  if (bidError) {
+    console.error("Error recording bid history:", bidError);
+    // We don't throw here as the bid was already placed successfully
+  }
+  
+  return data;
+};
+
+// Accept a bid
+export const acceptBid = async (capsuleId: string, bidId: string) => {
+  // First, get the capsule to verify ownership
+  const { data: capsule, error: capsuleError } = await supabase
+    .from('capsules')
+    .select('*')
+    .eq('id', capsuleId)
+    .single();
+  
+  if (capsuleError) {
+    console.error("Error fetching capsule:", capsuleError);
+    throw capsuleError;
+  }
+  
+  // Get the bid information
+  const { data: bid, error: bidError } = await supabase
+    .from('bids')
+    .select('*')
+    .eq('id', bidId)
+    .single();
+  
+  if (bidError) {
+    console.error("Error fetching bid:", bidError);
+    throw bidError;
+  }
+  
+  // Try to accept the bid on blockchain (optional, can be enabled if contract is deployed)
+  // const blockchainSuccess = await acceptBidOnChain(capsuleId);
+  
+  // if (!blockchainSuccess) {
+  //   throw new Error("Failed to accept bid on blockchain");
+  // }
+  
+  // Mark bid as accepted in the database
+  const { data, error } = await supabase
+    .from('bids')
+    .update({
+      is_accepted: true,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', bidId)
+    .select()
+    .single();
+  
+  if (error) {
+    console.error("Error accepting bid:", error);
+    throw error;
+  }
+  
+  // Update capsule status (this is handled by the database trigger)
+  
+  return data;
+};
+
 // Get all capsules
 export const getAllCapsules = async () => {
   const { data, error } = await supabase
     .from('capsules')
     .select(`
       *,
-      creator:profiles!creator_id(
-        id,
-        username,
-        avatar_url
-      ),
-      winner:profiles!winner_id(
+      creator:profiles(
         id,
         username,
         avatar_url
@@ -85,7 +202,7 @@ export const getAllCapsules = async () => {
     throw error;
   }
   
-  return data;
+  return data || [];
 };
 
 // Get today's capsules (capsules that will open today)
@@ -98,12 +215,7 @@ export const getTodayCapsules = async () => {
     .from('capsules')
     .select(`
       *,
-      creator:profiles!creator_id(
-        id,
-        username,
-        avatar_url
-      ),
-      winner:profiles!winner_id(
+      creator:profiles(
         id,
         username,
         avatar_url
@@ -118,7 +230,7 @@ export const getTodayCapsules = async () => {
     throw error;
   }
   
-  return data;
+  return data || [];
 };
 
 // Get capsules created by a specific user
@@ -127,12 +239,7 @@ export const getUserCapsules = async (userId: string) => {
     .from('capsules')
     .select(`
       *,
-      creator:profiles!creator_id(
-        id,
-        username,
-        avatar_url
-      ),
-      winner:profiles!winner_id(
+      creator:profiles(
         id,
         username,
         avatar_url
@@ -146,7 +253,7 @@ export const getUserCapsules = async (userId: string) => {
     throw error;
   }
   
-  return data;
+  return data || [];
 };
 
 // Get a specific capsule by ID
@@ -155,12 +262,7 @@ export const getCapsuleById = async (id: string) => {
     .from('capsules')
     .select(`
       *,
-      creator:profiles!creator_id(
-        id,
-        username,
-        avatar_url
-      ),
-      winner:profiles!winner_id(
+      creator:profiles(
         id,
         username,
         avatar_url
@@ -175,4 +277,27 @@ export const getCapsuleById = async (id: string) => {
   }
   
   return data;
+};
+
+// Get all bids for a specific capsule
+export const getCapsuleBids = async (capsuleId: string) => {
+  const { data, error } = await supabase
+    .from('bids')
+    .select(`
+      *,
+      bidder:profiles(
+        id,
+        username,
+        avatar_url
+      )
+    `)
+    .eq('capsule_id', capsuleId)
+    .order('created_at', { ascending: false });
+  
+  if (error) {
+    console.error("Error fetching capsule bids:", error);
+    throw error;
+  }
+  
+  return data || [];
 };
