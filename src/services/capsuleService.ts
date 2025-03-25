@@ -22,6 +22,7 @@ export type Capsule = {
   message?: string;
   image_url?: string;
   encryption_level: 'standard' | 'enhanced' | 'quantum';
+  auction_enabled?: boolean;
   created_at: string;
   updated_at: string;
   ipfs_hash?: string;
