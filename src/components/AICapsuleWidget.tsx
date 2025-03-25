@@ -20,7 +20,8 @@ const AICapsuleWidget = () => {
   const [eventName, setEventName] = useState("");
   const [message, setMessage] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [allowBidding, setAllowBidding] = useState(false);
   const [minimumBid, setMinimumBid] = useState("0.1");
   const [encryptionLevel, setEncryptionLevel] = useState<"standard" | "enhanced" | "quantum">("standard");
@@ -31,9 +32,12 @@ const AICapsuleWidget = () => {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setSelectedImage(file);
+      
+      // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
-        setSelectedImage(reader.result as string);
+        setPreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -70,15 +74,19 @@ const AICapsuleWidget = () => {
     try {
       setIsLoading(true);
       
+      // Prepare content for IPFS upload
+      const content = selectedImage || message;
+      
       // Create the capsule in Supabase with blockchain payment
       await createCapsule({
         name: eventName,
         open_date: selectedDate.toISOString(),
         initial_bid: parseFloat(minimumBid),
         message: message,
-        image_url: selectedImage || undefined,
+        image_url: previewUrl || undefined,
         encryption_level: encryptionLevel,
         winner_id: undefined,
+        content: content, // This will be uploaded to IPFS
       }, user.id);
 
       toast({
@@ -91,6 +99,7 @@ const AICapsuleWidget = () => {
       setMessage("");
       setSelectedDate(undefined);
       setSelectedImage(null);
+      setPreviewUrl(null);
       setAllowBidding(false);
       setMinimumBid("0.1");
       setEncryptionLevel("standard");
@@ -160,11 +169,14 @@ const AICapsuleWidget = () => {
               <div className="space-y-2">
                 <label className="text-sm text-neon-blue font-medium">EVENT IMAGE</label>
                 <div className="relative h-40 border-2 border-dashed border-neon-blue/20 rounded-lg overflow-hidden group hover:border-neon-blue/40 transition-colors">
-                  {selectedImage ? (
+                  {previewUrl ? (
                     <div className="relative h-full">
-                      <img src={selectedImage} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                       <button
-                        onClick={() => setSelectedImage(null)}
+                        onClick={() => {
+                          setSelectedImage(null);
+                          setPreviewUrl(null);
+                        }}
                         className="absolute top-2 right-2 bg-red-500/80 text-white px-2 py-1 rounded-md text-sm hover:bg-red-600/80 transition-colors"
                       >
                         Remove
@@ -374,8 +386,9 @@ const AICapsuleWidget = () => {
           <Button
             className="w-full bg-gradient-to-r from-neon-blue to-neon-pink text-white hover:opacity-90 transition-opacity mt-6"
             onClick={handleCreateCapsule}
+            disabled={isLoading}
           >
-            CREATE CAPSULE
+            {isLoading ? "CREATING..." : "CREATE CAPSULE"}
           </Button>
         </DialogContent>
       </Dialog>

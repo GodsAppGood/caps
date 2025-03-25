@@ -12,13 +12,19 @@ contract CapsuleContract {
     // Platform fee percentage (2%)
     uint256 public constant PLATFORM_FEE_PERCENT = 2;
 
+    // Owner of the contract who can withdraw funds
+    address public owner;
+    
+    // Counter for capsule IDs
+    uint256 public nextCapsuleId = 1;
+
     // Event emitted when a new capsule is created
     event CapsuleCreated(
-        address indexed creator,
+        uint256 indexed capsuleId,
         string name,
-        string openDate,
-        uint256 initialBid,
-        string encryptionLevel,
+        address indexed creator,
+        uint256 unlockTime,
+        string ipfsHash,
         uint256 timestamp
     );
     
@@ -32,34 +38,25 @@ contract CapsuleContract {
     
     // Event emitted when a bid is accepted
     event BidAccepted(
-        address indexed creator,
-        address indexed bidder,
         uint256 indexed capsuleId,
+        address indexed bidder,
         uint256 bidAmount,
         uint256 timestamp
     );
 
-    // Owner of the contract who can withdraw funds
-    address public owner;
-    
     // Mapping to store capsule data
     struct Capsule {
-        address creator;
         string name;
-        string openDate;
-        uint256 initialBid;
-        uint256 currentBid;
-        address highestBidder;
+        address payable creator;
+        address payable highestBidder;
+        uint256 highestBid;
+        uint256 unlockTime; // Time when the capsule opens
         bool isOpen;
-        string encryptionLevel;
-        uint256 auctionEndTime; // Timestamp when the auction ends (optional)
+        string ipfsHash; // IPFS link to content
     }
     
     // Mapping from capsule ID to Capsule data
     mapping(uint256 => Capsule) public capsules;
-    
-    // Counter for capsule IDs
-    uint256 public nextCapsuleId = 1;
 
     constructor() {
         owner = msg.sender;
@@ -67,37 +64,35 @@ contract CapsuleContract {
 
     // Function to create a new capsule
     function createCapsule(
-        string memory name,
-        string memory openDate,
-        uint256 initialBid,
-        string memory encryptionLevel
+        string memory _name,
+        string memory _ipfsHash,
+        uint256 _unlockTime
     ) external payable {
         // Check that the sender has sent exactly 0.01 BNB
         require(msg.value == CAPSULE_PRICE, "Payment must be exactly 0.01 BNB");
+        require(_unlockTime > block.timestamp, "Unlock time must be in the future");
 
         // Create new capsule
         uint256 capsuleId = nextCapsuleId;
         capsules[capsuleId] = Capsule({
-            creator: msg.sender,
-            name: name,
-            openDate: openDate,
-            initialBid: initialBid,
-            currentBid: initialBid,
-            highestBidder: address(0),
+            name: _name,
+            creator: payable(msg.sender),
+            highestBidder: payable(address(0)),
+            highestBid: 0,
+            unlockTime: _unlockTime,
             isOpen: false,
-            encryptionLevel: encryptionLevel,
-            auctionEndTime: 0 // No auction end time by default
+            ipfsHash: _ipfsHash
         });
         
         nextCapsuleId++;
 
         // Emit event with capsule details
         emit CapsuleCreated(
+            capsuleId,
+            _name,
             msg.sender,
-            name,
-            openDate,
-            initialBid,
-            encryptionLevel,
+            _unlockTime,
+            _ipfsHash,
             block.timestamp
         );
     }
@@ -112,23 +107,23 @@ contract CapsuleContract {
         // Check that capsule is not already open
         require(!capsule.isOpen, "Capsule is already open");
         
-        // Check if auction has ended (if auctionEndTime is set)
-        if (capsule.auctionEndTime > 0) {
-            require(block.timestamp < capsule.auctionEndTime, "Auction has ended");
-        }
+        // Check that current time is before unlock time
+        require(block.timestamp < capsule.unlockTime, "Capsule unlock time has passed");
         
         // Check that bid is higher than current bid by at least 10%
-        uint256 minimumBid = capsule.currentBid + (capsule.currentBid * MIN_BID_INCREMENT_PERCENT / 100);
-        require(msg.value >= minimumBid, "Bid must be at least 10% higher than current bid");
+        if(capsule.highestBid > 0) {
+            uint256 minimumBid = capsule.highestBid + (capsule.highestBid * MIN_BID_INCREMENT_PERCENT / 100);
+            require(msg.value >= minimumBid, "Bid must be at least 10% higher than current bid");
+        }
         
         // If there was a previous bidder, refund them
         if (capsule.highestBidder != address(0)) {
-            payable(capsule.highestBidder).transfer(capsule.currentBid);
+            capsule.highestBidder.transfer(capsule.highestBid);
         }
         
         // Update capsule with new bid
-        capsule.currentBid = msg.value;
-        capsule.highestBidder = msg.sender;
+        capsule.highestBid = msg.value;
+        capsule.highestBidder = payable(msg.sender);
         
         // Emit event for bid placement
         emit BidPlaced(
@@ -152,80 +147,38 @@ contract CapsuleContract {
         // Check that capsule is not already open
         require(!capsule.isOpen, "Capsule is already open");
         
-        // Mark capsule as open
+        // Mark capsule as open and set unlock time to now
         capsule.isOpen = true;
+        capsule.unlockTime = block.timestamp; // Capsule opens immediately after bid acceptance
         
         // Calculate platform fee (2%)
-        uint256 platformFee = capsule.currentBid * PLATFORM_FEE_PERCENT / 100;
-        uint256 creatorPayment = capsule.currentBid - platformFee;
+        uint256 platformFee = capsule.highestBid * PLATFORM_FEE_PERCENT / 100;
+        uint256 creatorPayment = capsule.highestBid - platformFee;
         
         // Transfer funds to creator and platform
-        payable(capsule.creator).transfer(creatorPayment);
         payable(owner).transfer(platformFee);
+        capsule.creator.transfer(creatorPayment);
         
         // Emit event for bid acceptance
         emit BidAccepted(
-            capsule.creator,
-            capsule.highestBidder,
             capsuleId,
-            capsule.currentBid,
+            capsule.highestBidder,
+            capsule.highestBid,
             block.timestamp
         );
-    }
-
-    // Function to set an auction end time (optional, only callable by capsule creator)
-    function setAuctionEndTime(uint256 capsuleId, uint256 endTime) external {
-        Capsule storage capsule = capsules[capsuleId];
-        
-        // Check that sender is the capsule creator
-        require(msg.sender == capsule.creator, "Only capsule creator can set auction end time");
-        
-        // Check that capsule is not already open
-        require(!capsule.isOpen, "Capsule is already open");
-        
-        // Check that end time is in the future
-        require(endTime > block.timestamp, "End time must be in the future");
-        
-        // Set auction end time
-        capsule.auctionEndTime = endTime;
     }
     
-    // Function to finalize an auction that has ended by time (callable by anyone)
-    function finalizeTimedAuction(uint256 capsuleId) external {
+    // Function to check if a capsule is open (either by time or by accepted bid)
+    function isCapsuleOpen(uint256 capsuleId) public view returns (bool) {
         Capsule storage capsule = capsules[capsuleId];
-        
-        // Check that capsule exists
-        require(capsule.creator != address(0), "Capsule does not exist");
-        
-        // Check that capsule is not already open
-        require(!capsule.isOpen, "Capsule is already open");
-        
-        // Check that auction end time is set and has passed
-        require(capsule.auctionEndTime > 0, "No auction end time set");
-        require(block.timestamp >= capsule.auctionEndTime, "Auction has not ended yet");
-        
-        // Check that there is a valid bid
-        require(capsule.highestBidder != address(0), "No bids to finalize");
-        
-        // Mark capsule as open
-        capsule.isOpen = true;
-        
-        // Calculate platform fee (2%)
-        uint256 platformFee = capsule.currentBid * PLATFORM_FEE_PERCENT / 100;
-        uint256 creatorPayment = capsule.currentBid - platformFee;
-        
-        // Transfer funds to creator and platform
-        payable(capsule.creator).transfer(creatorPayment);
-        payable(owner).transfer(platformFee);
-        
-        // Emit event for bid acceptance
-        emit BidAccepted(
-            capsule.creator,
-            capsule.highestBidder,
-            capsuleId,
-            capsule.currentBid,
-            block.timestamp
-        );
+        // Capsule is open if it's marked as open or if the unlock time has passed
+        return capsule.isOpen || block.timestamp >= capsule.unlockTime;
+    }
+    
+    // Function to get capsule content (only if open)
+    function getCapsuleContent(uint256 capsuleId) public view returns (string memory) {
+        require(isCapsuleOpen(capsuleId), "Capsule is not open yet");
+        return capsules[capsuleId].ipfsHash;
     }
 
     // Function for the owner to withdraw funds

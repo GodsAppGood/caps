@@ -1,6 +1,13 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { createCapsuleWithPayment, placeBidOnChain, acceptBidOnChain } from "@/lib/contractHelpers";
+import { 
+  createCapsuleWithPayment, 
+  placeBidOnChain, 
+  acceptBidOnChain,
+  isCapsuleOpenOnChain,
+  getCapsuleContentFromChain,
+  uploadToIPFS 
+} from "@/lib/contractHelpers";
 
 export type Capsule = {
   id: string;
@@ -17,6 +24,7 @@ export type Capsule = {
   encryption_level: 'standard' | 'enhanced' | 'quantum';
   created_at: string;
   updated_at: string;
+  ipfs_hash?: string;
   creator?: {
     id: string;
     username?: string;
@@ -29,16 +37,26 @@ export type Capsule = {
   };
 };
 
-export type CapsuleCreate = Omit<Capsule, 'id' | 'creator_id' | 'status' | 'created_at' | 'updated_at' | 'creator' | 'winner'>;
+export type CapsuleCreate = Omit<Capsule, 'id' | 'creator_id' | 'status' | 'created_at' | 'updated_at' | 'creator' | 'winner' | 'ipfs_hash'> & {
+  content?: string | File;
+};
 
-// Create a new capsule with blockchain payment
+// Create a new capsule with blockchain payment and IPFS content
 export const createCapsule = async (capsuleData: CapsuleCreate, userId: string) => {
-  // First, process the blockchain payment
+  // First, upload content to IPFS if provided
+  let ipfsHash = "";
+  if (capsuleData.content) {
+    ipfsHash = await uploadToIPFS(capsuleData.content);
+  }
+  
+  // Calculate unlock time from open_date
+  const unlockTime = Math.floor(new Date(capsuleData.open_date).getTime() / 1000);
+  
+  // Process the blockchain payment and create capsule on chain
   const paymentSuccess = await createCapsuleWithPayment(
     capsuleData.name,
-    capsuleData.open_date,
-    capsuleData.initial_bid,
-    capsuleData.encryption_level
+    capsuleData.content || capsuleData.message || "Empty capsule",
+    unlockTime
   );
 
   if (!paymentSuccess) {
@@ -51,7 +69,8 @@ export const createCapsule = async (capsuleData: CapsuleCreate, userId: string) 
     .insert({
       ...capsuleData,
       creator_id: userId,
-      current_bid: capsuleData.initial_bid
+      current_bid: capsuleData.initial_bid,
+      ipfs_hash: ipfsHash
     })
     .select()
     .single();
@@ -305,6 +324,38 @@ export const getCapsuleById = async (id: string): Promise<Capsule> => {
     throw error;
   }
   
+  // Check if the capsule should be open based on blockchain state
+  const isOpenOnChain = await isCapsuleOpenOnChain(id);
+  
+  // If open on chain but not in DB, update the status
+  if (isOpenOnChain && data.status === 'closed') {
+    await supabase
+      .from('capsules')
+      .update({ 
+        status: 'opened',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+      
+    data.status = 'opened';
+  }
+  
+  // If open, try to get the IPFS content from chain
+  if (isOpenOnChain && !data.ipfs_hash) {
+    const ipfsHash = await getCapsuleContentFromChain(id);
+    if (ipfsHash) {
+      await supabase
+        .from('capsules')
+        .update({ 
+          ipfs_hash: ipfsHash,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+        
+      data.ipfs_hash = ipfsHash;
+    }
+  }
+  
   // Convert the data to conform to the Capsule type
   return {
     ...data,
@@ -335,4 +386,47 @@ export const getCapsuleBids = async (capsuleId: string) => {
   }
   
   return data || [];
+};
+
+// Check if a capsule is open
+export const isCapsuleOpen = async (id: string): Promise<boolean> => {
+  try {
+    // First check in database
+    const { data, error } = await supabase
+      .from('capsules')
+      .select('status, open_date')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error("Error checking capsule status:", error);
+      return false;
+    }
+    
+    // If already marked as open in database
+    if (data.status === 'opened') {
+      return true;
+    }
+    
+    // Check if current time is past open_date
+    const openDate = new Date(data.open_date);
+    const now = new Date();
+    if (now >= openDate) {
+      // Update status in database
+      await supabase
+        .from('capsules')
+        .update({ 
+          status: 'opened',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+      return true;
+    }
+    
+    // If not open in database, check on blockchain
+    return await isCapsuleOpenOnChain(id);
+  } catch (error) {
+    console.error("Error checking if capsule is open:", error);
+    return false;
+  }
 };
