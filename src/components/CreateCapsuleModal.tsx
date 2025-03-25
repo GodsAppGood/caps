@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -5,14 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { CalendarIcon, Image, MessageSquare, Clock, Check } from "lucide-react";
+import { CalendarIcon, Image, MessageSquare, Clock, Check, Coins } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { createCapsule } from "@/services/capsuleService";
+import { createCapsuleWithPayment } from "@/lib/contractHelpers";
 
 interface CreateCapsuleModalProps {
   isOpen: boolean;
@@ -27,6 +30,7 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [auctionEnabled, setAuctionEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState(0); // 0 = BNB, 1 = ETH
   const { toast } = useToast();
   const { userProfile } = useAuth();
 
@@ -50,6 +54,7 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
     setSelectedImage(null);
     setPreviewUrl(null);
     setAuctionEnabled(false);
+    setPaymentMethod(0);
   };
 
   const handleCreateCapsule = async () => {
@@ -100,6 +105,7 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
         imageUrl = supabase.storage.from('capsule_images').getPublicUrl(filePath).data.publicUrl;
       }
       
+      // First create the capsule in the database
       const capsuleData = {
         name: capsuleName,
         creator_id: userProfile.id,
@@ -111,6 +117,22 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
       };
       
       const result = await createCapsule(capsuleData);
+      
+      // Then process blockchain payment
+      const content = message || "Empty time capsule";
+      const unlockTime = Math.floor(selectedDate.getTime() / 1000); // Convert to unix timestamp
+      
+      // Call blockchain function with selected payment method
+      const blockchainResult = await createCapsuleWithPayment(
+        capsuleName,
+        selectedImage || content,
+        unlockTime,
+        paymentMethod === 0 ? 'BNB' : 'ETH'
+      );
+      
+      if (!blockchainResult) {
+        throw new Error("Blockchain transaction failed. Your capsule has been created in the database but not on the blockchain.");
+      }
 
       toast({
         title: "Success",
@@ -228,17 +250,40 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-neon-blue/20">
+          <div className="space-y-4 pt-4 border-t border-neon-blue/20">
             <div className="space-y-1">
-              <Label htmlFor="auction-enable" className="text-sm text-neon-blue font-medium">ENABLE AUCTION</Label>
-              <p className="text-xs text-white/70">Let others bid to open your capsule early</p>
+              <Label className="text-sm text-neon-blue font-medium">PAYMENT METHOD</Label>
+              <div className="space-y-5">
+                <div className="flex justify-between text-white">
+                  <span className={`font-medium ${paymentMethod === 0 ? "text-neon-blue" : "text-white/70"}`}>0.01 BNB</span>
+                  <span className={`font-medium ${paymentMethod === 1 ? "text-neon-blue" : "text-white/70"}`}>0.005 ETH</span>
+                </div>
+                <Slider 
+                  value={[paymentMethod]} 
+                  onValueChange={(value) => setPaymentMethod(value[0])}
+                  max={1}
+                  step={1}
+                  className="cursor-pointer"
+                />
+                <div className="flex items-center gap-2 text-white/70">
+                  <Coins className="w-4 h-4 text-neon-blue" />
+                  <span className="text-xs">Choose your preferred payment method for creating this capsule</span>
+                </div>
+              </div>
             </div>
-            <Switch 
-              id="auction-enable" 
-              checked={auctionEnabled} 
-              onCheckedChange={setAuctionEnabled} 
-              className="data-[state=checked]:bg-neon-blue"
-            />
+
+            <div className="flex items-center justify-between border-t border-neon-blue/20 pt-4">
+              <div className="space-y-1">
+                <Label htmlFor="auction-enable" className="text-sm text-neon-blue font-medium">ENABLE AUCTION</Label>
+                <p className="text-xs text-white/70">Let others bid to open your capsule early</p>
+              </div>
+              <Switch 
+                id="auction-enable" 
+                checked={auctionEnabled} 
+                onCheckedChange={setAuctionEnabled} 
+                className="data-[state=checked]:bg-neon-blue"
+              />
+            </div>
           </div>
         </div>
 

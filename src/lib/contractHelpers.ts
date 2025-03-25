@@ -20,7 +20,8 @@ const ipfs = create({
 });
 
 // Contract information
-const CONTRACT_ADDRESS = "0x123456789abcdef..."; // Replace with your actual contract address
+const CONTRACT_ADDRESS_BNB = "0x123456789abcdef..."; // Replace with your actual BNB contract address
+const CONTRACT_ADDRESS_ETH = "0x987654321abcdef..."; // Replace with your actual ETH contract address
 const CONTRACT_ABI = [
   // ... Include the ABI for your smart contract here
   "function createCapsule(string memory _name, string memory _ipfsHash, uint256 _unlockTime) public payable",
@@ -31,7 +32,7 @@ const CONTRACT_ABI = [
 ];
 
 // Helper function to get contract instance
-const getContract = async () => {
+const getContract = async (paymentMethod = 'BNB') => {
   try {
     // Check if window.ethereum is available
     if (typeof window !== 'undefined' && !window.ethereum) {
@@ -44,8 +45,9 @@ const getContract = async () => {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
       
-      // Create contract instance
-      return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+      // Create contract instance with appropriate address based on payment method
+      const contractAddress = paymentMethod === 'BNB' ? CONTRACT_ADDRESS_BNB : CONTRACT_ADDRESS_ETH;
+      return new ethers.Contract(contractAddress, CONTRACT_ABI, signer);
     }
     
     return null;
@@ -84,45 +86,51 @@ export const uploadToIPFS = async (content: string | File): Promise<string> => {
 export const createCapsuleWithPayment = async (
   name: string,
   content: string | File,
-  unlockTime: number
+  unlockTime: number,
+  paymentMethod: string = 'BNB'
 ): Promise<boolean> => {
   try {
     // Upload content to IPFS first
     const ipfsHash = await uploadToIPFS(content);
     
     // Get contract instance
-    const contract = await getContract();
+    const contract = await getContract(paymentMethod);
     if (!contract) return false;
 
-    // Create transaction with payment (0.01 BNB)
+    // Set payment amount based on selected method
+    const paymentAmount = paymentMethod === 'BNB' 
+      ? ethers.utils.parseEther("0.01") // 0.01 BNB
+      : ethers.utils.parseEther("0.005"); // 0.005 ETH
+
+    // Create transaction with payment
     const tx = await contract.createCapsule(
       name,
       ipfsHash,
       unlockTime,
-      { value: ethers.utils.parseEther("0.01") }
+      { value: paymentAmount }
     );
 
     // Wait for transaction to be mined
     const receipt = await tx.wait();
     
     console.log("Capsule created successfully:", receipt);
-    toast.success("Time capsule created successfully!");
+    toast.success("Time capsule created successfully on the blockchain!");
     return true;
   } catch (error) {
     console.error("Error creating capsule:", error);
-    toast.error("Failed to create time capsule. Please try again.");
+    toast.error("Failed to create time capsule on blockchain. Please try again.");
     return false;
   }
 };
 
 // Place a bid on a capsule
-export const placeBidOnChain = async (capsuleId: string, bidAmount: number): Promise<boolean> => {
+export const placeBidOnChain = async (capsuleId: string, bidAmount: number, paymentMethod: string = 'BNB'): Promise<boolean> => {
   try {
     // Get contract instance
-    const contract = await getContract();
+    const contract = await getContract(paymentMethod);
     if (!contract) return false;
 
-    // Convert bid amount to wei (BNB)
+    // Convert bid amount to wei (BNB or ETH)
     const bidAmountWei = ethers.utils.parseEther(bidAmount.toString());
 
     // Place bid
@@ -142,10 +150,10 @@ export const placeBidOnChain = async (capsuleId: string, bidAmount: number): Pro
 };
 
 // Accept a bid
-export const acceptBidOnChain = async (capsuleId: string): Promise<boolean> => {
+export const acceptBidOnChain = async (capsuleId: string, paymentMethod: string = 'BNB'): Promise<boolean> => {
   try {
     // Get contract instance
-    const contract = await getContract();
+    const contract = await getContract(paymentMethod);
     if (!contract) return false;
 
     // Accept bid
@@ -165,10 +173,10 @@ export const acceptBidOnChain = async (capsuleId: string): Promise<boolean> => {
 };
 
 // Check if a capsule is open
-export const isCapsuleOpenOnChain = async (capsuleId: string): Promise<boolean> => {
+export const isCapsuleOpenOnChain = async (capsuleId: string, paymentMethod: string = 'BNB'): Promise<boolean> => {
   try {
     // Get contract instance
-    const contract = await getContract();
+    const contract = await getContract(paymentMethod);
     if (!contract) return false;
 
     // Check if capsule is open
@@ -181,10 +189,10 @@ export const isCapsuleOpenOnChain = async (capsuleId: string): Promise<boolean> 
 };
 
 // Get capsule content from chain
-export const getCapsuleContentFromChain = async (capsuleId: string): Promise<string> => {
+export const getCapsuleContentFromChain = async (capsuleId: string, paymentMethod: string = 'BNB'): Promise<string> => {
   try {
     // Get contract instance
-    const contract = await getContract();
+    const contract = await getContract(paymentMethod);
     if (!contract) return "";
 
     // Get capsule content (IPFS hash)
