@@ -1,76 +1,116 @@
-import { useState, useEffect } from "react";
-import { Timer, Star, Lock, DollarSign, Eye } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Link } from "react-router-dom";
-import AICapsuleWidget from "@/components/AICapsuleWidget";
-import { WalletConnect } from "@/components/WalletConnect";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { getAllCapsules, getTodayCapsules, Capsule, placeBid } from "@/services/capsuleService";
+
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  Package,
+  Clock,
+  Calendar,
+  Lock,
+  Plus,
+  DollarSign,
+  User,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationEllipsis,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useToast } from "@/hooks/use-toast";
+import { getAllCapsules, getTodayCapsules, getCapsuleBids, Capsule, placeBid, acceptBid } from "@/services/capsuleService";
+import { Input } from "@/components/ui/input";
+import { formatDistanceToNow, format, parseISO } from "date-fns";
+import AICapsuleWidget from "@/components/AICapsuleWidget";
 
 const Index = () => {
-  const [selectedCapsule, setSelectedCapsule] = useState<number | null>(null);
-  const [betAmount, setBetAmount] = useState("");
-  const [todayCapsules, setTodayCapsules] = useState<any[]>([]);
-  const [allCapsules, setAllCapsules] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [selectedCapsule, setSelectedCapsule] = useState<Capsule | null>(null);
+  const [showCapsuleDetails, setShowCapsuleDetails] = useState(false);
+  const [allCapsules, setAllCapsules] = useState<Capsule[]>([]);
+  const [todayCapsules, setTodayCapsules] = useState<Capsule[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [bids, setBids] = useState<any[]>([]);
+  const [bidAmount, setBidAmount] = useState("");
+  const [isBidding, setIsBidding] = useState(false);
+  const [isAcceptingBid, setIsAcceptingBid] = useState(false);
+  const { toast } = useToast();
+  const itemsPerPage = 6;
 
   useEffect(() => {
     const fetchCapsules = async () => {
       try {
         setIsLoading(true);
-        
-        // Fetch today's capsules and all capsules
-        const todayData = await getTodayCapsules();
-        const allData = await getAllCapsules();
-        
-        // Format the data for display
-        const formattedTodayCapsules = todayData.map((capsule) => ({
-          id: capsule.id,
-          name: capsule.name,
-          openTime: new Date(capsule.open_date).toLocaleTimeString(),
-          creator: { 
-            name: capsule.creator?.username || "ANONYMOUS", 
-            avatar: capsule.creator?.avatar_url || "", 
-            verified: true 
-          },
-          highestBid: capsule.initial_bid,
-          current_bid: capsule.current_bid || capsule.initial_bid
-        }));
-        
-        const formattedAllCapsules = allData.map((capsule) => ({
-          id: capsule.id,
-          name: capsule.name,
-          openDate: new Date(capsule.open_date).toLocaleDateString(),
-          creator: { 
-            name: capsule.creator?.username || "ANONYMOUS", 
-            avatar: capsule.creator?.avatar_url || "", 
-            verified: true 
-          },
-          highestBid: capsule.current_bid || capsule.initial_bid
-        }));
-        
-        setTodayCapsules(formattedTodayCapsules);
-        setAllCapsules(formattedAllCapsules);
+        const [allCapsulesData, todayCapsulesData] = await Promise.all([
+          getAllCapsules(),
+          getTodayCapsules(),
+        ]);
+        setAllCapsules(allCapsulesData);
+        setTodayCapsules(todayCapsulesData);
       } catch (error) {
         console.error("Error fetching capsules:", error);
         toast({
           title: "Error",
-          description: "Failed to load capsules",
+          description: "Failed to load time capsules",
           variant: "destructive",
         });
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchCapsules();
   }, [toast]);
+
+  const fetchBids = async (capsuleId: string) => {
+    try {
+      const bidsData = await getCapsuleBids(capsuleId);
+      setBids(bidsData);
+    } catch (error) {
+      console.error("Error fetching bids:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load bids for this capsule",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleViewCapsule = async (capsule: Capsule) => {
+    setSelectedCapsule(capsule);
+    setShowCapsuleDetails(true);
+    await fetchBids(capsule.id);
+    // Reset bid amount
+    setBidAmount("");
+  };
 
   const handlePlaceBid = async () => {
     if (!user) {
@@ -82,76 +122,55 @@ const Index = () => {
       return;
     }
 
-    if (!selectedCapsule || !betAmount || parseFloat(betAmount) <= 0) {
+    if (!selectedCapsule) return;
+
+    const amount = parseFloat(bidAmount);
+    if (isNaN(amount) || amount <= 0) {
       toast({
-        title: "Error",
+        title: "Invalid Bid",
         description: "Please enter a valid bid amount",
         variant: "destructive",
       });
       return;
     }
 
+    const currentHighestBid = selectedCapsule.current_bid || selectedCapsule.initial_bid;
+    const minimumBid = currentHighestBid * 1.1; // 10% higher than current bid
+
+    if (amount < minimumBid) {
+      toast({
+        title: "Bid Too Low",
+        description: `Bid must be at least ${minimumBid.toFixed(3)} BNB (10% higher than current bid)`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      // Get the capsule that's being bid on
-      const capsule = [...todayCapsules, ...allCapsules].find(c => c.id === selectedCapsule);
-      
-      if (!capsule) {
-        throw new Error("Capsule not found");
-      }
-
-      const currentHighestBid = parseFloat(capsule.highestBid);
-      const minimumBid = currentHighestBid * 1.1; // 10% higher than current bid
-      const bidAmount = parseFloat(betAmount);
-
-      // Check if bid is at least 10% higher than current highest bid
-      if (bidAmount < minimumBid) {
-        toast({
-          title: "Bid too low",
-          description: `Your bid must be at least ${minimumBid.toFixed(2)} BNB (10% higher than current bid)`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Place bid
-      await placeBid(selectedCapsule, bidAmount, user.id);
+      setIsBidding(true);
+      await placeBid(selectedCapsule.id, amount, user.id);
       
       toast({
-        title: "Bid placed",
-        description: `Your bid of ${betAmount} BNB on capsule #${selectedCapsule.toString().padStart(3, '0')} has been successfully placed`,
+        title: "Success",
+        description: "Your bid has been placed successfully",
       });
       
-      // Refresh capsules to show updated bids
-      const todayData = await getTodayCapsules();
-      const allData = await getAllCapsules();
+      // Refresh capsule details and bids
+      const updatedCapsules = allCapsules.map(c => 
+        c.id === selectedCapsule.id 
+          ? { ...c, current_bid: amount, highest_bidder_id: user.id } 
+          : c
+      );
+      setAllCapsules(updatedCapsules);
       
-      // Update state with fresh data
-      setTodayCapsules(todayData.map(capsule => ({
-        id: capsule.id,
-        name: capsule.name,
-        openTime: new Date(capsule.open_date).toLocaleTimeString(),
-        creator: { 
-          name: capsule.creator?.username || "ANONYMOUS", 
-          avatar: capsule.creator?.avatar_url || "", 
-          verified: true 
-        },
-        highestBid: capsule.current_bid || capsule.initial_bid
-      })));
+      // Update selected capsule
+      setSelectedCapsule({ ...selectedCapsule, current_bid: amount, highest_bidder_id: user.id });
       
-      setAllCapsules(allData.map(capsule => ({
-        id: capsule.id,
-        name: capsule.name,
-        openDate: new Date(capsule.open_date).toLocaleDateString(),
-        creator: { 
-          name: capsule.creator?.username || "ANONYMOUS", 
-          avatar: capsule.creator?.avatar_url || "", 
-          verified: true 
-        },
-        highestBid: capsule.current_bid || capsule.initial_bid
-      })));
+      // Refresh bids
+      await fetchBids(selectedCapsule.id);
       
-      setBetAmount("");
-      setSelectedCapsule(null);
+      // Reset bid amount
+      setBidAmount("");
     } catch (error: any) {
       console.error("Error placing bid:", error);
       toast({
@@ -159,192 +178,507 @@ const Index = () => {
         description: error.message || "Failed to place bid",
         variant: "destructive",
       });
+    } finally {
+      setIsBidding(false);
     }
   };
 
+  const handleAcceptBid = async (bidId: string) => {
+    if (!user || !selectedCapsule) return;
+
+    try {
+      setIsAcceptingBid(true);
+      await acceptBid(selectedCapsule.id, bidId);
+      
+      toast({
+        title: "Success",
+        description: "You have accepted the bid. The capsule is now opened!",
+      });
+      
+      // Update capsule status locally
+      const updatedCapsules = allCapsules.map(c => 
+        c.id === selectedCapsule.id 
+          ? { ...c, status: 'opened' } 
+          : c
+      );
+      setAllCapsules(updatedCapsules);
+      
+      // Close dialog
+      setShowCapsuleDetails(false);
+      
+      // You might want to navigate to the opened capsule view or refresh the current view
+    } catch (error: any) {
+      console.error("Error accepting bid:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to accept bid",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAcceptingBid(false);
+    }
+  };
+
+  // Pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = allCapsules.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(allCapsules.length / itemsPerPage);
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
   return (
-    <div className="min-h-screen bg-space-gradient text-white">
-      {/* Header */}
-      <header className="container mx-auto p-4">
-        <nav className="flex items-center justify-between">
-          <div className="text-4xl font-bold tracking-wider animate-glow">
-            <span className="text-neon-blue">CAPS</span>
-          </div>
-          <div className="flex gap-4 items-center">
-            <Link to="/profile">
-              <Avatar className="w-10 h-10 border-2 border-neon-blue cursor-pointer hover:border-neon-pink transition-colors">
-                <AvatarFallback className="bg-space-dark text-neon-blue">UN</AvatarFallback>
-              </Avatar>
-            </Link>
-            <WalletConnect />
-            <button className="px-6 py-3 rounded-full bg-space-light border border-neon-green text-neon-green hover:bg-neon-green hover:text-white transition-all duration-300">
-              PREMIUM CAPS
-            </button>
-          </div>
-        </nav>
-      </header>
-
-      {/* Today's Capsules */}
-      <section className="container mx-auto py-16">
-        <h2 className="text-3xl font-bold mb-8 text-center">TODAY'S CAPS</h2>
-        <div className="flex gap-8 overflow-x-auto pb-8 snap-x snap-mandatory">
-          {todayCapsules.map((capsule) => (
-            <div
-              key={capsule.id}
-              className="relative min-w-[300px] h-[400px] group perspective-1000 snap-center"
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
+      {/* Hero Section */}
+      <div className="container mx-auto px-4 pt-20 pb-16 text-center">
+        <h1 className="text-4xl font-bold mb-6 text-primary">
+          Create Digital Time Capsules on the Blockchain
+        </h1>
+        <p className="text-xl mb-8 text-muted-foreground max-w-2xl mx-auto">
+          Securely store memories, messages, and media with our blockchain-powered time capsules.
+          Set a future date for opening or allow others to bid for early access.
+        </p>
+        <div className="flex justify-center gap-4">
+          {user ? (
+            <Button
+              size="lg"
+              onClick={() => navigate("/profile")}
+              className="bg-primary hover:bg-primary/90"
             >
-              {/* Glass Container */}
-              <div className="absolute inset-0 bg-gradient-to-b from-neon-blue/10 to-transparent rounded-[30px] backdrop-blur-md border border-neon-blue/20 overflow-hidden">
-                {/* Inner Glow Effect */}
-                <div className="absolute inset-0 bg-gradient-to-t from-neon-green/20 to-transparent opacity-50 animate-pulse" />
-                
-                {/* Technical Details - Horizontal Lines */}
-                <div className="absolute inset-x-0 top-1/4 h-px bg-gradient-to-r from-transparent via-neon-blue/30 to-transparent" />
-                <div className="absolute inset-x-0 top-2/4 h-px bg-gradient-to-r from-transparent via-neon-blue/30 to-transparent" />
-                <div className="absolute inset-x-0 top-3/4 h-px bg-gradient-to-r from-transparent via-neon-blue/30 to-transparent" />
-                
-                {/* Vertical Lines */}
-                <div className="absolute inset-y-0 left-8 w-px bg-gradient-to-b from-transparent via-neon-blue/30 to-transparent" />
-                <div className="absolute inset-y-0 right-8 w-px bg-gradient-to-b from-transparent via-neon-blue/30 to-transparent" />
-                
-                {/* Side Glows */}
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-32 bg-neon-pink blur-sm" />
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-32 bg-neon-pink blur-sm" />
-              </div>
+              My Capsules
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              onClick={() => navigate("/profile")}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Get Started
+            </Button>
+          )}
+        </div>
+      </div>
 
-              {/* Creator Avatar */}
-              <Avatar className="absolute top-4 right-4 w-8 h-8 border-2 border-neon-blue z-10">
-                <AvatarFallback className="bg-space-dark text-neon-blue text-xs">
-                  {capsule.creator.name.slice(0, 2)}
-                </AvatarFallback>
-                {capsule.creator.verified && (
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-neon-blue rounded-full flex items-center justify-center">
-                    <span className="text-space-dark text-[8px]">✓</span>
+      {/* Today's Capsules Section */}
+      {todayCapsules.length > 0 && (
+        <div className="bg-muted/50 py-12">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl font-bold mb-8 text-center">
+              <Calendar className="inline-block mr-2 mb-1" />
+              Time Capsules Opening Today
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {todayCapsules.map((capsule) => (
+                <Card
+                  key={capsule.id}
+                  className="bg-card hover:shadow-lg transition-shadow cursor-pointer border-primary/10"
+                  onClick={() => handleViewCapsule(capsule)}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-lg">{capsule.name}</CardTitle>
+                      <Badge variant={capsule.status === "opened" ? "default" : "outline"}>
+                        {capsule.status === "opened" ? "Opened" : "Unlocking Today"}
+                      </Badge>
+                    </div>
+                    <CardDescription>
+                      Created by{" "}
+                      {capsule.creator?.username || "Anonymous"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-2 items-center text-sm text-muted-foreground">
+                      <Clock size={16} />
+                      <span>Opens {format(parseISO(capsule.open_date), "PP")}</span>
+                    </div>
+                    {capsule.current_bid && (
+                      <div className="flex gap-2 items-center text-sm text-muted-foreground mt-2">
+                        <DollarSign size={16} />
+                        <span>Current bid: {capsule.current_bid} BNB</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* All Capsules Section */}
+      <div className="container mx-auto px-4 py-16">
+        <h2 className="text-2xl font-bold mb-8 text-center">
+          <Package className="inline-block mr-2 mb-1" />
+          Explore Time Capsules
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {isLoading ? (
+            // Loading skeleton
+            Array.from({ length: 6 }).map((_, index) => (
+              <Card key={index} className="bg-card/50 animate-pulse">
+                <CardHeader className="pb-2">
+                  <div className="h-6 bg-muted rounded w-2/3 mb-2"></div>
+                  <div className="h-4 bg-muted rounded w-1/2"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-4 bg-muted rounded w-full mb-2"></div>
+                  <div className="h-4 bg-muted rounded w-2/3"></div>
+                </CardContent>
+              </Card>
+            ))
+          ) : currentItems.length > 0 ? (
+            currentItems.map((capsule) => (
+              <Card
+                key={capsule.id}
+                className="bg-card hover:shadow-lg transition-shadow cursor-pointer border-primary/10"
+                onClick={() => handleViewCapsule(capsule)}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">{capsule.name}</CardTitle>
+                    <Badge variant={capsule.status === "opened" ? "default" : "outline"}>
+                      {capsule.status === "opened" ? "Opened" : "Sealed"}
+                    </Badge>
                   </div>
-                )}
-              </Avatar>
-
-              {/* Content */}
-              <div className="relative h-full flex flex-col items-center justify-center gap-6 p-8">
-                <Timer className="w-12 h-12 text-neon-blue animate-glow" />
-                <div className="text-center z-10">
-                  <p className="text-neon-blue text-lg mb-2">{capsule.name}</p>
-                  <p className="text-3xl font-bold text-white">{capsule.openTime}</p>
-                </div>
-
-                {/* Highest Bid */}
-                <div className="absolute bottom-24 left-0 right-0 flex justify-center">
-                  <div className="px-4 py-2 bg-space-dark/50 rounded-full border border-neon-pink/30">
-                    <span className="text-neon-pink text-sm flex items-center">
-                      <DollarSign className="w-4 h-4 mr-1" /> TOP BID: {capsule.highestBid} BNB
+                  <CardDescription>
+                    Created by{" "}
+                    {capsule.creator?.username || "Anonymous"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2 items-center text-sm text-muted-foreground">
+                    <Clock size={16} />
+                    <span>
+                      {capsule.status === "opened"
+                        ? "Opened " + formatDistanceToNow(parseISO(capsule.updated_at), { addSuffix: true })
+                        : "Opens " + format(parseISO(capsule.open_date), "PP")}
                     </span>
                   </div>
-                </div>
-
-                {/* Place Bid Button */}
-                <button 
-                  onClick={() => setSelectedCapsule(capsule.id)}
-                  className="absolute bottom-12 left-0 right-0 mx-auto w-3/4 px-4 py-2 bg-neon-pink/20 rounded-full border border-neon-pink hover:bg-neon-pink/40 transition-colors flex items-center justify-center"
-                >
-                  <Eye className="w-4 h-4 mr-2 text-neon-pink" />
-                  <span className="text-neon-pink text-sm">PLACE BID</span>
-                </button>
-
-                {/* Bottom Technical Details */}
-                <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-                  <div className="px-4 py-2 bg-space-dark/50 rounded-full border border-neon-blue/30">
-                    <span className="text-neon-blue text-sm">CAPSULE ID: #00{capsule.id}</span>
-                  </div>
-                </div>
-              </div>
+                  {capsule.current_bid && (
+                    <div className="flex gap-2 items-center text-sm text-muted-foreground mt-2">
+                      <DollarSign size={16} />
+                      <span>Current bid: {capsule.current_bid} BNB</span>
+                    </div>
+                  )}
+                  {capsule.encryption_level && (
+                    <div className="flex gap-2 items-center text-sm text-muted-foreground mt-2">
+                      <Lock size={16} />
+                      <span>
+                        {capsule.encryption_level.charAt(0).toUpperCase() +
+                          capsule.encryption_level.slice(1)}{" "}
+                        encryption
+                      </span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="col-span-3 text-center py-12">
+              <p className="text-muted-foreground">No time capsules found</p>
             </div>
-          ))}
+          )}
         </div>
-      </section>
 
-      {/* All Capsules */}
-      <section className="container mx-auto py-16">
-        <h2 className="text-3xl font-bold mb-8 text-center">ALL CAPS</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {allCapsules.map((capsule) => (
-            <div
-              key={capsule.id}
-              className="group relative h-[400px] perspective-1000"
-            >
-              {/* Glass Container */}
-              <div className="absolute inset-0 bg-gradient-to-b from-neon-pink/10 to-transparent rounded-[30px] backdrop-blur-md border border-neon-pink/20 overflow-hidden">
-                {/* Inner Glow Effect */}
-                <div className="absolute inset-0 bg-gradient-to-t from-neon-green/20 to-transparent opacity-50 group-hover:opacity-70 transition-opacity duration-300" />
-                
-                {/* Technical Details */}
-                <div className="absolute inset-x-0 top-1/4 h-px bg-gradient-to-r from-transparent via-neon-pink/30 to-transparent" />
-                <div className="absolute inset-x-0 top-2/4 h-px bg-gradient-to-r from-transparent via-neon-pink/30 to-transparent" />
-                <div className="absolute inset-x-0 top-3/4 h-px bg-gradient-to-r from-transparent via-neon-pink/30 to-transparent" />
-                
-                {/* Side Glows */}
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-32 bg-neon-blue blur-sm" />
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-32 bg-neon-blue blur-sm" />
-              </div>
+        {/* Pagination */}
+        {!isLoading && allCapsules.length > itemsPerPage && (
+          <Pagination className="mt-8">
+            <PaginationContent>
+              {currentPage > 1 && (
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      paginate(currentPage - 1);
+                    }}
+                  />
+                </PaginationItem>
+              )}
 
-              {/* Creator Avatar */}
-              <Avatar className="absolute top-4 right-4 w-8 h-8 border-2 border-neon-pink z-10">
-                <AvatarFallback className="bg-space-dark text-neon-pink text-xs">
-                  {capsule.creator.name.slice(0, 2)}
-                </AvatarFallback>
-                {capsule.creator.verified && (
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-neon-pink rounded-full flex items-center justify-center">
-                    <span className="text-space-dark text-[8px]">✓</span>
+              {Array.from({ length: totalPages }, (_, i) => {
+                const pageNumber = i + 1;
+                // Show first page, last page, and pages around current page
+                if (
+                  pageNumber === 1 ||
+                  pageNumber === totalPages ||
+                  (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                ) {
+                  return (
+                    <PaginationItem key={pageNumber}>
+                      <PaginationLink
+                        href="#"
+                        isActive={pageNumber === currentPage}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          paginate(pageNumber);
+                        }}
+                      >
+                        {pageNumber}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                } else if (
+                  pageNumber === currentPage - 2 ||
+                  pageNumber === currentPage + 2
+                ) {
+                  return (
+                    <PaginationItem key={pageNumber}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  );
+                }
+                return null;
+              })}
+
+              {currentPage < totalPages && (
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      paginate(currentPage + 1);
+                    }}
+                  />
+                </PaginationItem>
+              )}
+            </PaginationContent>
+          </Pagination>
+        )}
+      </div>
+
+      {/* Capsule Detail Dialog */}
+      {selectedCapsule && (
+        <Dialog open={showCapsuleDetails} onOpenChange={setShowCapsuleDetails}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">{selectedCapsule.name}</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <Tabs defaultValue="details">
+                <TabsList className="mb-4">
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                  <TabsTrigger value="bids">Bids</TabsTrigger>
+                </TabsList>
+                <TabsContent value="details">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Capsule Information</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center">
+                          <User className="mr-2 text-primary" size={18} />
+                          <span className="text-muted-foreground mr-2">Creator:</span>
+                          <Avatar className="h-6 w-6 mr-2">
+                            <AvatarImage
+                              src={selectedCapsule.creator?.avatar_url || ""}
+                              alt={selectedCapsule.creator?.username || ""}
+                            />
+                            <AvatarFallback>
+                              {selectedCapsule.creator?.username?.charAt(0) || "A"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{selectedCapsule.creator?.username || "Anonymous"}</span>
+                        </div>
+
+                        <div className="flex items-center">
+                          <Calendar className="mr-2 text-primary" size={18} />
+                          <span className="text-muted-foreground mr-2">Opening Date:</span>
+                          <span>{format(parseISO(selectedCapsule.open_date), "PPP")}</span>
+                        </div>
+
+                        <div className="flex items-center">
+                          <Lock className="mr-2 text-primary" size={18} />
+                          <span className="text-muted-foreground mr-2">Encryption:</span>
+                          <span>
+                            {selectedCapsule.encryption_level?.charAt(0).toUpperCase() +
+                              selectedCapsule.encryption_level?.slice(1)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center">
+                          <DollarSign className="mr-2 text-primary" size={18} />
+                          <span className="text-muted-foreground mr-2">Initial Bid:</span>
+                          <span>{selectedCapsule.initial_bid} BNB</span>
+                        </div>
+
+                        {selectedCapsule.current_bid && (
+                          <div className="flex items-center">
+                            <DollarSign className="mr-2 text-primary" size={18} />
+                            <span className="text-muted-foreground mr-2">Current Bid:</span>
+                            <span>{selectedCapsule.current_bid} BNB</span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center">
+                          <Clock className="mr-2 text-primary" size={18} />
+                          <span className="text-muted-foreground mr-2">Created:</span>
+                          <span>{formatDistanceToNow(parseISO(selectedCapsule.created_at), { addSuffix: true })}</span>
+                        </div>
+
+                        <div className="flex items-center">
+                          <Badge variant={selectedCapsule.status === "opened" ? "default" : "outline"}>
+                            {selectedCapsule.status === "opened" ? "Opened" : "Sealed"}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {selectedCapsule.message && (
+                        <div className="mt-6">
+                          <h3 className="text-lg font-medium mb-2">Message</h3>
+                          <div className="p-4 bg-muted rounded-md">
+                            <p>{selectedCapsule.message}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      {selectedCapsule.status === "closed" && (
+                        <div className="bg-card p-6 rounded-lg border border-border">
+                          <h3 className="text-lg font-medium mb-4">Place a Bid</h3>
+                          <div className="space-y-4">
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                Current highest bid: {selectedCapsule.current_bid || selectedCapsule.initial_bid} BNB
+                              </p>
+                              <p className="text-sm text-muted-foreground mb-4">
+                                Minimum bid required:{" "}
+                                {((selectedCapsule.current_bid || selectedCapsule.initial_bid) * 1.1).toFixed(3)} BNB
+                              </p>
+                            </div>
+                            <div className="relative">
+                              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                              <Input
+                                type="number"
+                                placeholder="Enter bid amount in BNB"
+                                value={bidAmount}
+                                onChange={(e) => setBidAmount(e.target.value)}
+                                className="pl-10"
+                                step="0.01"
+                                min={((selectedCapsule.current_bid || selectedCapsule.initial_bid) * 1.1).toFixed(3)}
+                              />
+                            </div>
+                            <Button 
+                              className="w-full" 
+                              onClick={handlePlaceBid}
+                              disabled={isBidding || !user}
+                            >
+                              {isBidding ? "Processing..." : "Place Bid"}
+                            </Button>
+                            {!user && (
+                              <p className="text-xs text-muted-foreground text-center mt-2">
+                                You need to be signed in to place a bid
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="mt-6">
+                            <h4 className="text-sm font-medium mb-2">Bidding Rules:</h4>
+                            <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                              <li>Minimum bid increment is 10% of the current highest bid</li>
+                              <li>Bids are binding and cannot be withdrawn</li>
+                              <li>The capsule creator can accept any bid at any time</li>
+                              <li>If your bid is outbid, your funds will be automatically returned</li>
+                              <li>Platform fee of 2% applies to accepted bids</li>
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedCapsule.image_url && (
+                        <div className="mt-6">
+                          <h3 className="text-lg font-medium mb-2">Image</h3>
+                          <div className="bg-muted rounded-md overflow-hidden">
+                            <img
+                              src={selectedCapsule.image_url}
+                              alt={selectedCapsule.name}
+                              className="w-full h-auto object-cover"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </Avatar>
-
-              {/* Content */}
-              <div className="relative h-full flex flex-col items-center justify-center gap-6 p-8">
-                <Lock className="w-12 h-12 text-neon-pink group-hover:scale-110 transition-transform duration-300" />
-                <div className="text-center z-10">
-                  <h3 className="text-2xl font-bold mb-2">{capsule.name}</h3>
-                  <p className="text-neon-pink">OPENS {capsule.openDate}</p>
-                </div>
-
-                {/* Highest Bid */}
-                <div className="absolute bottom-24 left-0 right-0 flex justify-center">
-                  <div className="px-4 py-2 bg-space-dark/50 rounded-full border border-neon-pink/30">
-                    <span className="text-neon-pink text-sm flex items-center">
-                      <DollarSign className="w-4 h-4 mr-1" /> TOP BID: {capsule.highestBid} BNB
-                    </span>
-                  </div>
-                </div>
-
-                {/* Place Bid Button */}
-                <button 
-                  onClick={() => setSelectedCapsule(capsule.id)}
-                  className="absolute bottom-12 left-0 right-0 mx-auto w-3/4 px-4 py-2 bg-neon-pink/20 rounded-full border border-neon-pink hover:bg-neon-pink/40 transition-colors flex items-center justify-center"
-                >
-                  <Eye className="w-4 h-4 mr-2 text-neon-pink" />
-                  <span className="text-neon-pink text-sm">PLACE BID</span>
-                </button>
-
-                {/* Bottom Technical Details */}
-                <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-                  <div className="px-4 py-2 bg-space-dark/50 rounded-full border border-neon-pink/30">
-                    <span className="text-neon-pink text-sm">CAPSULE ID: #{capsule.id.toString().padStart(3, '0')}</span>
-                  </div>
-                </div>
-              </div>
+                </TabsContent>
+                <TabsContent value="bids">
+                  {bids.length > 0 ? (
+                    <div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Bidder</TableHead>
+                            <TableHead>Amount (BNB)</TableHead>
+                            <TableHead>Time</TableHead>
+                            <TableHead>Status</TableHead>
+                            {selectedCapsule.creator_id === user?.id && 
+                             selectedCapsule.status === "closed" && (
+                              <TableHead className="text-right">Action</TableHead>
+                            )}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {bids.map((bid) => (
+                            <TableRow key={bid.id}>
+                              <TableCell className="flex items-center">
+                                <Avatar className="h-6 w-6 mr-2">
+                                  <AvatarImage
+                                    src={bid.bidder?.avatar_url || ""}
+                                    alt={bid.bidder?.username || ""}
+                                  />
+                                  <AvatarFallback>
+                                    {bid.bidder?.username?.charAt(0) || "A"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span>{bid.bidder?.username || "Anonymous"}</span>
+                              </TableCell>
+                              <TableCell>{bid.amount}</TableCell>
+                              <TableCell>
+                                {formatDistanceToNow(parseISO(bid.created_at), { addSuffix: true })}
+                              </TableCell>
+                              <TableCell>
+                                {bid.is_accepted ? (
+                                  <Badge>Accepted</Badge>
+                                ) : (
+                                  <Badge variant="outline">Pending</Badge>
+                                )}
+                              </TableCell>
+                              {selectedCapsule.creator_id === user?.id && 
+                               selectedCapsule.status === "closed" && (
+                                <TableCell className="text-right">
+                                  {!bid.is_accepted && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleAcceptBid(bid.id)}
+                                      disabled={isAcceptingBid}
+                                    >
+                                      {isAcceptingBid ? "Processing..." : "Accept Bid"}
+                                    </Button>
+                                  )}
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground">No bids have been placed yet</p>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
-          ))}
-        </div>
-      </section>
+          </DialogContent>
+        </Dialog>
+      )}
 
-      {/* Betting Modal */}
-      <Dialog open={selectedCapsule !== null} onOpenChange={() => setSelectedCapsule(null)}>
-        <DialogContent className="bg-space-dark/95 backdrop-blur-xl border border-neon-pink/20 rounded-xl w-full max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center text-white">
-              PLACE A BID
-            </DialogTitle>
-          </DialogHeader>
+      {/* AI Capsule Creation Widget */}
+      <AICapsuleWidget />
+    </div>
+  );
+};
 
-          <div className="space-y-8 py-6">
-            {/* Current
-
+export default Index;

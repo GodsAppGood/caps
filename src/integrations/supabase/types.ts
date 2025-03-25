@@ -9,11 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bids: {
+        Row: {
+          amount: number
+          bidder_id: string
+          capsule_id: string
+          created_at: string
+          id: string
+          is_accepted: boolean | null
+        }
+        Insert: {
+          amount: number
+          bidder_id: string
+          capsule_id: string
+          created_at?: string
+          id?: string
+          is_accepted?: boolean | null
+        }
+        Update: {
+          amount?: number
+          bidder_id?: string
+          capsule_id?: string
+          created_at?: string
+          id?: string
+          is_accepted?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bids_capsule_id_fkey"
+            columns: ["capsule_id"]
+            isOneToOne: false
+            referencedRelation: "capsules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       capsules: {
         Row: {
           created_at: string
           creator_id: string
+          current_bid: number | null
           encryption_level: string | null
+          highest_bidder_id: string | null
           id: string
           image_url: string | null
           initial_bid: number
@@ -27,7 +64,9 @@ export type Database = {
         Insert: {
           created_at?: string
           creator_id: string
+          current_bid?: number | null
           encryption_level?: string | null
+          highest_bidder_id?: string | null
           id?: string
           image_url?: string | null
           initial_bid?: number
@@ -41,7 +80,9 @@ export type Database = {
         Update: {
           created_at?: string
           creator_id?: string
+          current_bid?: number | null
           encryption_level?: string | null
+          highest_bidder_id?: string | null
           id?: string
           image_url?: string | null
           initial_bid?: number
