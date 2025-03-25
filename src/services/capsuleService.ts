@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { createCapsuleWithPayment, placeBidOnChain, acceptBidOnChain } from "@/lib/contractHelpers";
 
@@ -195,17 +196,17 @@ const processCreator = (creator: any) => {
 
 // Get all capsules
 export const getAllCapsules = async (): Promise<Capsule[]> => {
+  // Using direct SQL to fetch profiles with capsules since we don't have a relation
   const { data, error } = await supabase
     .from('capsules')
     .select(`
       *,
-      creator:profiles(
+      creator:creator_id (
         id,
         username,
         avatar_url
       )
-    `)
-    .order('created_at', { ascending: false });
+    `);
   
   if (error) {
     console.error("Error fetching capsules:", error);
@@ -215,6 +216,7 @@ export const getAllCapsules = async (): Promise<Capsule[]> => {
   // Convert the data to conform to the Capsule type
   return (data || []).map(capsule => ({
     ...capsule,
+    // Explicitly cast the status to the correct type
     status: capsule.status === 'opened' ? 'opened' : 'closed' as 'opened' | 'closed',
     creator: processCreator(capsule.creator)
   })) as Capsule[];
@@ -230,7 +232,7 @@ export const getTodayCapsules = async (): Promise<Capsule[]> => {
     .from('capsules')
     .select(`
       *,
-      creator:profiles(
+      creator:creator_id (
         id,
         username,
         avatar_url
@@ -248,6 +250,7 @@ export const getTodayCapsules = async (): Promise<Capsule[]> => {
   // Convert the data to conform to the Capsule type
   return (data || []).map(capsule => ({
     ...capsule,
+    // Explicitly cast the status to the correct type
     status: capsule.status === 'opened' ? 'opened' : 'closed' as 'opened' | 'closed',
     creator: processCreator(capsule.creator)
   })) as Capsule[];
@@ -259,7 +262,7 @@ export const getUserCapsules = async (userId: string): Promise<Capsule[]> => {
     .from('capsules')
     .select(`
       *,
-      creator:profiles(
+      creator:creator_id (
         id,
         username,
         avatar_url
@@ -276,6 +279,7 @@ export const getUserCapsules = async (userId: string): Promise<Capsule[]> => {
   // Convert the data to conform to the Capsule type
   return (data || []).map(capsule => ({
     ...capsule,
+    // Explicitly cast the status to the correct type
     status: capsule.status === 'opened' ? 'opened' : 'closed' as 'opened' | 'closed',
     creator: processCreator(capsule.creator)
   })) as Capsule[];
@@ -287,7 +291,7 @@ export const getCapsuleById = async (id: string): Promise<Capsule> => {
     .from('capsules')
     .select(`
       *,
-      creator:profiles(
+      creator:creator_id (
         id,
         username,
         avatar_url
@@ -304,6 +308,7 @@ export const getCapsuleById = async (id: string): Promise<Capsule> => {
   // Convert the data to conform to the Capsule type
   return {
     ...data,
+    // Explicitly cast the status to the correct type
     status: data.status === 'opened' ? 'opened' : 'closed' as 'opened' | 'closed',
     creator: processCreator(data.creator)
   } as Capsule;
@@ -315,7 +320,7 @@ export const getCapsuleBids = async (capsuleId: string) => {
     .from('bids')
     .select(`
       *,
-      bidder:profiles(
+      bidder:bidder_id (
         id,
         username,
         avatar_url

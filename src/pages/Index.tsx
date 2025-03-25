@@ -192,7 +192,7 @@ const Index = () => {
       
       const updatedCapsules = allCapsules.map(c => 
         c.id === selectedCapsule.id 
-          ? { ...c, status: 'opened' } 
+          ? { ...c, status: 'opened' as const } 
           : c
       );
       setAllCapsules(updatedCapsules);
