@@ -3,8 +3,15 @@ import React from "react";
 import { Package } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { WalletConnect } from "@/components/WalletConnect";
+import { useNavigate } from "react-router-dom";
 
 const Header = () => {
+  const navigate = useNavigate();
+  
+  const handleProfileClick = () => {
+    navigate("/profile");
+  };
+  
   return (
     <header className="container mx-auto py-6 px-4">
       <div className="flex items-center justify-between">
@@ -15,7 +22,10 @@ const Header = () => {
         
         <div className="flex items-center gap-4 animate-fade-in delay-150">
           <WalletConnect />
-          <Avatar className="w-10 h-10 border-2 border-neon-blue transition-all hover:scale-105">
+          <Avatar 
+            className="w-10 h-10 border-2 border-neon-blue transition-all hover:scale-105 cursor-pointer" 
+            onClick={handleProfileClick}
+          >
             <AvatarFallback className="bg-space-dark text-neon-blue">UN</AvatarFallback>
           </Avatar>
         </div>
