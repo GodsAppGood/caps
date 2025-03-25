@@ -48,10 +48,10 @@ export const WalletConnect = () => {
   return (
     <button
       onClick={handleWalletAction}
-      className="glowing-btn px-10 py-4 text-xl"
+      className="flex items-center gap-2 px-6 py-3 rounded-full bg-space-light border border-neon-pink text-neon-pink hover:bg-neon-pink hover:text-white transition-all duration-300"
     >
-      <Wallet className="w-5 h-5 mr-2 inline-block" />
-      {isConnected ? `${shortenAddress(address)}` : "WALLET"}
+      <Wallet className="w-5 h-5" />
+      {isConnected ? `${shortenAddress(address)}` : "CONNECT WALLET"}
     </button>
   );
 };
