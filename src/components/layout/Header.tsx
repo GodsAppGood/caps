@@ -8,14 +8,14 @@ const Header = () => {
   return (
     <header className="container mx-auto py-6 px-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 animate-fade-in">
           <Package className="w-6 h-6 text-neon-blue" />
           <span className="text-xl font-bold text-gradient">COSMIC CAPSULES</span>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 animate-fade-in delay-150">
           <WalletConnect />
-          <Avatar className="w-10 h-10 border-2 border-neon-blue">
+          <Avatar className="w-10 h-10 border-2 border-neon-blue transition-all hover:scale-105">
             <AvatarFallback className="bg-space-dark text-neon-blue">UN</AvatarFallback>
           </Avatar>
         </div>

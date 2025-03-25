@@ -20,11 +20,11 @@ const AuctionCard = ({ capsule, index, currentSlide }: AuctionCardProps) => {
           : "opacity-0 scale-95 hidden lg:block"
       }`}
     >
-      <Card className="bg-space-dark/80 backdrop-blur-xl border border-neon-blue/20 hover:border-neon-blue/60 transition-all h-full">
+      <Card className="bg-space-dark/80 backdrop-blur-xl border border-neon-blue/20 hover:border-neon-blue/60 transition-all duration-300 h-full transform hover:scale-105 hover:translate-y-[-5px]">
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
             <span className="text-gradient">{capsule.name}</span>
-            <Circle className="w-5 h-5 text-neon-blue" />
+            <Circle className="w-5 h-5 text-neon-blue animate-pulse" />
           </CardTitle>
           <CardDescription className="text-white/60">
             Opens: {new Date(capsule.open_date).toLocaleDateString()}
@@ -34,7 +34,7 @@ const AuctionCard = ({ capsule, index, currentSlide }: AuctionCardProps) => {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-white/80">Current Bid:</span>
-              <span className="text-neon-pink font-bold">
+              <span className="text-neon-pink font-bold animate-pulse">
                 {capsule.current_bid || capsule.initial_bid} BNB
               </span>
             </div>
@@ -53,7 +53,7 @@ const AuctionCard = ({ capsule, index, currentSlide }: AuctionCardProps) => {
           </div>
         </CardContent>
         <CardFooter>
-          <Button className="w-full bg-gradient-to-r from-neon-blue to-neon-pink hover:opacity-90 transition-opacity">
+          <Button className="w-full bg-gradient-to-r from-neon-blue to-neon-pink hover:opacity-90 transition-all transform hover:scale-105">
             PLACE BID
           </Button>
         </CardFooter>

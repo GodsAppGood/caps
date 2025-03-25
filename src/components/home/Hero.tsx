@@ -13,19 +13,21 @@ const Hero = () => {
           {Array.from({ length: 100 }).map((_, i) => (
             <div
               key={i}
-              className="absolute rounded-full bg-white"
+              className="absolute rounded-full bg-white animate-pulse"
               style={{
                 width: `${Math.random() * 3 + 1}px`,
                 height: `${Math.random() * 3 + 1}px`,
                 top: `${Math.random() * 100}%`,
                 left: `${Math.random() * 100}%`,
                 opacity: Math.random() * 0.8 + 0.2,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${Math.random() * 3 + 2}s`,
               }}
             />
           ))}
         </div>
         
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-radial from-neon-blue/20 via-neon-pink/5 to-transparent blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-radial from-neon-blue/20 via-neon-pink/5 to-transparent blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
       </div>
       
       <div className="container relative z-10 px-4 flex flex-col items-center text-center">
@@ -41,7 +43,7 @@ const Hero = () => {
           Set an opening date or start an auction for early access!
         </p>
         <Button
-          className="rounded-full text-lg px-8 py-6 bg-gradient-to-r from-neon-pink to-neon-blue hover:opacity-90 transition-opacity animate-fade-in delay-500"
+          className="rounded-full text-lg px-8 py-6 bg-gradient-to-r from-neon-pink to-neon-blue hover:opacity-90 transition-all animate-fade-in delay-500 hover:scale-105 transform"
           onClick={() => navigate("/profile")}
         >
           🚀 CREATE CAPSULE
