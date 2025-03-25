@@ -8,7 +8,6 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signInWithTwitter: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -40,32 +39,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithTwitter = async () => {
-    try {
-      setIsLoading(true);
-      // Use 'twitter' as the provider name
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'twitter',
-        options: {
-          redirectTo: window.location.origin,
-          scopes: 'tweet.read users.read',
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-    } catch (error: any) {
-      toast({
-        title: "Authentication error",
-        description: error.message || "Failed to sign in with Twitter",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const signOut = async () => {
     try {
       setIsLoading(true);
@@ -92,7 +65,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     session,
     isLoading,
-    signInWithTwitter,
     signOut,
   };
 
