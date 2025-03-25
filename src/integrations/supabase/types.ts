@@ -44,8 +44,41 @@ export type Database = {
           },
         ]
       }
+      capsule_bids: {
+        Row: {
+          bid_amount: number
+          bidder_id: string
+          capsule_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          bid_amount: number
+          bidder_id: string
+          capsule_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          bid_amount?: number
+          bidder_id?: string
+          capsule_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capsule_bids_capsule_id_fkey"
+            columns: ["capsule_id"]
+            isOneToOne: false
+            referencedRelation: "capsules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       capsules: {
         Row: {
+          auction_enabled: boolean | null
           created_at: string
           creator_id: string
           current_bid: number | null
@@ -63,6 +96,7 @@ export type Database = {
           winner_id: string | null
         }
         Insert: {
+          auction_enabled?: boolean | null
           created_at?: string
           creator_id: string
           current_bid?: number | null
@@ -80,6 +114,7 @@ export type Database = {
           winner_id?: string | null
         }
         Update: {
+          auction_enabled?: boolean | null
           created_at?: string
           creator_id?: string
           current_bid?: number | null

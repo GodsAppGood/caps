@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { createCapsule } from "@/services/capsuleService";
+import { supabase } from "@/integrations/supabase/client";
 
 const AICapsuleWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -34,7 +35,6 @@ const AICapsuleWidget = () => {
     if (file) {
       setSelectedImage(file);
       
-      // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result as string);
@@ -74,24 +74,39 @@ const AICapsuleWidget = () => {
     try {
       setIsLoading(true);
       
-      // Prepare content for IPFS upload
-      const content = selectedImage || message;
+      // Upload image to Supabase storage if an image is selected
+      let imageUrl: string | null = null;
+      if (selectedImage) {
+        const fileExt = selectedImage.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `public/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('capsule_images')
+          .upload(filePath, selectedImage);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        imageUrl = supabase.storage.from('capsule_images').getPublicUrl(filePath).data.publicUrl;
+      }
       
-      // Create the capsule in Supabase with blockchain payment
+      // Create the capsule in Supabase
       await createCapsule({
         name: eventName,
         open_date: selectedDate.toISOString(),
         initial_bid: parseFloat(minimumBid),
         message: message,
-        image_url: previewUrl || undefined,
+        image_url: imageUrl,
         encryption_level: encryptionLevel,
+        auction_enabled: allowBidding,
         winner_id: undefined,
-        content: content, // This will be uploaded to IPFS
       }, user.id);
 
       toast({
         title: "Success",
-        description: "Your time capsule has been created successfully with payment of 0.01 BNB!",
+        description: "Your time capsule has been created successfully!",
       });
 
       // Reset form
