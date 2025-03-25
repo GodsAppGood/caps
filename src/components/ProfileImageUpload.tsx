@@ -8,11 +8,15 @@ import { useToast } from "@/hooks/use-toast";
 interface ProfileImageUploadProps {
   size?: "sm" | "md" | "lg" | "xl";
   onImageUpdate?: (url: string) => void;
+  className?: string;
+  showUploadOverlay?: boolean;
 }
 
 export const ProfileImageUpload = ({ 
   size = "lg", 
-  onImageUpdate
+  onImageUpdate,
+  className = "",
+  showUploadOverlay = true
 }: ProfileImageUploadProps) => {
   const { userProfile, uploadAvatar } = useAuth();
   const { toast } = useToast();
@@ -67,6 +71,11 @@ export const ProfileImageUpload = ({
       if (url && onImageUpdate) {
         onImageUpdate(url);
       }
+      
+      toast({
+        title: "Success",
+        description: "Profile image updated successfully",
+      });
     } catch (error: any) {
       console.error("Error uploading image:", error);
       toast({
@@ -88,7 +97,7 @@ export const ProfileImageUpload = ({
   };
 
   return (
-    <div className="relative">
+    <div className={`relative ${className}`}>
       <Avatar className={`${sizeClasses[size]} border-3 border-neon-blue cursor-pointer group`}>
         {userProfile?.avatar_url ? (
           <AvatarImage 
@@ -103,16 +112,18 @@ export const ProfileImageUpload = ({
       </Avatar>
 
       {/* Upload overlay */}
-      <div 
-        className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-        onClick={triggerFileInput}
-      >
-        {isUploading ? (
-          <Loader2 className="w-8 h-8 text-white animate-spin" />
-        ) : (
-          <Camera className="w-8 h-8 text-white" />
-        )}
-      </div>
+      {showUploadOverlay && (
+        <div 
+          className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+          onClick={triggerFileInput}
+        >
+          {isUploading ? (
+            <Loader2 className="w-8 h-8 text-white animate-spin" />
+          ) : (
+            <Camera className="w-8 h-8 text-white" />
+          )}
+        </div>
+      )}
 
       {/* Hidden file input */}
       <input 
