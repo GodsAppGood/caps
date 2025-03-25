@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAccount } from "wagmi";
 import { getUserCapsules, getCapsuleBids, placeBid, acceptBid } from "@/services/capsuleService";
+import { ProfileImageUpload } from "@/components/ProfileImageUpload";
 
 const UserProfile = () => {
   const [selectedCapsule, setSelectedCapsule] = useState<number | null>(null);
@@ -31,26 +32,21 @@ const UserProfile = () => {
       try {
         setIsLoading(true);
         
-        // Fetch capsules created by the current user
         const capsules = await getUserCapsules(user.id);
-        
-        // Format capsules for display
         const formattedCapsules = capsules.map((capsule) => ({
           id: capsule.id,
           name: capsule.name,
           openDate: new Date(capsule.open_date).toLocaleDateString(),
           highestBid: capsule.current_bid || capsule.initial_bid,
-          bids: 0 // This will be updated when we fetch bids
+          bids: 0
         }));
         
         setUserCapsules(formattedCapsules);
         
-        // Fetch bids for each capsule
         const allBidRequests: any[] = [];
         for (const capsule of capsules) {
           const bids = await getCapsuleBids(capsule.id);
           if (bids.length > 0) {
-            // Group bids by capsule and only get the highest bid per bidder
             const uniqueBidders = new Map();
             bids.forEach(bid => {
               if (!uniqueBidders.has(bid.bidder_id) || bid.bid_amount > uniqueBidders.get(bid.bidder_id).bid_amount) {
@@ -58,7 +54,6 @@ const UserProfile = () => {
               }
             });
             
-            // Convert highest bids to the format needed for display
             uniqueBidders.forEach(bid => {
               allBidRequests.push({
                 id: bid.id,
@@ -98,7 +93,6 @@ const UserProfile = () => {
         throw new Error("Bid request not found");
       }
       
-      // Accept the bid in the database - convert to string if number
       await acceptBid(String(acceptBidCapsule), bidRequest.id);
       
       toast({
@@ -106,7 +100,6 @@ const UserProfile = () => {
         description: "You have accepted the bid. The capsule will be opened for the bidder.",
       });
       
-      // Refresh data
       if (user) {
         const capsules = await getUserCapsules(user.id);
         setUserCapsules(capsules.map(capsule => ({
@@ -117,7 +110,6 @@ const UserProfile = () => {
           bids: 0
         })));
         
-        // Remove accepted bid from requests
         setBidRequests(bidRequests.filter(request => request.id !== bidRequest.id));
       }
       
@@ -133,7 +125,6 @@ const UserProfile = () => {
   };
 
   const handleRejectBid = async () => {
-    // For now, just remove from UI
     if (!acceptBidCapsule) return;
     
     const bidRequest = bidRequests.find(request => request.capsuleId === acceptBidCapsule);
@@ -168,17 +159,15 @@ const UserProfile = () => {
     }
     
     try {
-      // Get the capsule
       const capsule = userCapsules.find(c => c.id === selectedCapsule);
       if (!capsule) {
         throw new Error("Capsule not found");
       }
       
       const currentHighestBid = parseFloat(capsule.highestBid);
-      const minimumBid = currentHighestBid * 1.1; // 10% higher
+      const minimumBid = currentHighestBid * 1.1;
       const bidAmount = parseFloat(betAmount);
       
-      // Check if bid meets minimum
       if (bidAmount < minimumBid) {
         toast({
           title: "Bid too low",
@@ -188,7 +177,6 @@ const UserProfile = () => {
         return;
       }
       
-      // Place the bid - convert to string if number
       await placeBid(String(selectedCapsule), bidAmount);
       
       toast({
@@ -196,11 +184,9 @@ const UserProfile = () => {
         description: `Your bid of ${betAmount} BNB on capsule #${selectedCapsule.toString().padStart(3, '0')} has been placed successfully`,
       });
       
-      // Reset state
       setBetAmount("");
       setSelectedCapsule(null);
       
-      // Refresh data
       if (user) {
         const capsules = await getUserCapsules(user.id);
         setUserCapsules(capsules.map(capsule => ({
@@ -238,7 +224,6 @@ const UserProfile = () => {
     }
   };
 
-  // Get avatar text from wallet address
   const getAvatarText = () => {
     if (address) {
       return `${address.slice(0, 2).toUpperCase()}`;
@@ -246,7 +231,6 @@ const UserProfile = () => {
     return "UN";
   };
 
-  // Format wallet address for display
   const formatWalletAddress = () => {
     if (!address) return "No wallet connected";
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -255,7 +239,6 @@ const UserProfile = () => {
   return (
     <div className="min-h-screen bg-space-gradient text-white">
       <div className="container mx-auto py-8">
-        {/* Header with Navigation */}
         <div className="flex items-center justify-between mb-12">
           <Link to="/" className="flex items-center text-neon-blue hover:text-neon-pink transition-colors">
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -269,12 +252,9 @@ const UserProfile = () => {
           </div>
         </div>
         
-        {/* User Profile Header */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12 p-6 rounded-2xl bg-space-dark/50 border border-neon-blue/20 backdrop-blur-md">
           <div className="flex items-center gap-6">
-            <Avatar className="w-20 h-20 border-3 border-neon-blue">
-              <AvatarFallback className="bg-space-dark text-neon-blue text-2xl">{getAvatarText()}</AvatarFallback>
-            </Avatar>
+            <ProfileImageUpload />
             <div className="text-left">
               <h1 className="text-2xl font-bold">WALLET USER</h1>
               <p className="text-neon-blue">{formatWalletAddress()}</p>
@@ -310,7 +290,6 @@ const UserProfile = () => {
           </div>
         </div>
         
-        {/* Main Content Tabs */}
         <Tabs defaultValue="capsules" className="w-full">
           <TabsList className="grid grid-cols-3 mb-8">
             <TabsTrigger value="capsules">MY CAPSULES</TabsTrigger>
@@ -318,7 +297,6 @@ const UserProfile = () => {
             <TabsTrigger value="history">HISTORY</TabsTrigger>
           </TabsList>
           
-          {/* My Capsules Tab */}
           <TabsContent value="capsules">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {userCapsules.map((capsule) => (
@@ -326,18 +304,14 @@ const UserProfile = () => {
                   key={capsule.id}
                   className="relative min-h-[350px] group perspective-1000"
                 >
-                  {/* Glass Container */}
                   <div className="absolute inset-0 bg-gradient-to-b from-neon-blue/10 to-transparent rounded-[30px] backdrop-blur-md border border-neon-blue/20 overflow-hidden transition-all duration-300 hover:border-neon-blue/40">
-                    {/* Inner Glow Effect */}
                     <div className="absolute inset-0 bg-gradient-to-t from-neon-green/20 to-transparent opacity-50" />
                     
-                    {/* Technical Details */}
                     <div className="absolute inset-x-0 top-1/4 h-px bg-gradient-to-r from-transparent via-neon-blue/30 to-transparent" />
                     <div className="absolute inset-x-0 top-2/4 h-px bg-gradient-to-r from-transparent via-neon-blue/30 to-transparent" />
                     <div className="absolute inset-x-0 top-3/4 h-px bg-gradient-to-r from-transparent via-neon-blue/30 to-transparent" />
                   </div>
 
-                  {/* Content */}
                   <div className="relative h-full flex flex-col items-center justify-center gap-6 p-8">
                     <Timer className="w-12 h-12 text-neon-blue" />
                     <div className="text-center z-10">
@@ -345,7 +319,6 @@ const UserProfile = () => {
                       <p className="text-neon-blue">OPENS {capsule.openDate}</p>
                     </div>
 
-                    {/* Bid Information */}
                     <div className="absolute bottom-24 left-0 right-0 flex justify-center">
                       <div className="px-4 py-2 bg-space-dark/50 rounded-full border border-neon-blue/30">
                         <span className="text-neon-blue text-sm flex items-center">
@@ -355,7 +328,6 @@ const UserProfile = () => {
                       </div>
                     </div>
 
-                    {/* Bottom Technical Details */}
                     <div className="absolute bottom-8 left-0 right-0 flex justify-center">
                       <div className="px-4 py-2 bg-space-dark/50 rounded-full border border-neon-blue/30">
                         <span className="text-neon-blue text-sm">CAPSULE ID: #{capsule.id.toString().padStart(3, '0')}</span>
@@ -367,7 +339,6 @@ const UserProfile = () => {
             </div>
           </TabsContent>
           
-          {/* Bid Requests Tab */}
           <TabsContent value="bids">
             <div className="space-y-6">
               {bidRequests.map((request) => (
@@ -415,7 +386,6 @@ const UserProfile = () => {
             </div>
           </TabsContent>
           
-          {/* History Tab */}
           <TabsContent value="history">
             <div className="space-y-6">
               <div className="p-6 rounded-xl border border-neon-blue/20 bg-space-dark/50 backdrop-blur-md">
@@ -461,7 +431,6 @@ const UserProfile = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Accept Bid Modal */}
         <Dialog open={acceptBidCapsule !== null} onOpenChange={() => setAcceptBidCapsule(null)}>
           <DialogContent className="bg-space-dark/95 backdrop-blur-xl border border-neon-pink/20 rounded-xl w-full max-w-lg">
             <DialogHeader>
@@ -505,7 +474,6 @@ const UserProfile = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Betting Modal */}
         <Dialog open={selectedCapsule !== null} onOpenChange={() => setSelectedCapsule(null)}>
           <DialogContent className="bg-space-dark/95 backdrop-blur-xl border border-neon-pink/20 rounded-xl w-full max-w-lg">
             <DialogHeader>
@@ -515,7 +483,6 @@ const UserProfile = () => {
             </DialogHeader>
 
             <div className="space-y-8 py-6">
-              {/* Current Highest Bid Info */}
               {selectedCapsule && (
                 <div className="p-4 rounded-lg bg-space-light/20 border border-neon-pink/30 text-center">
                   <p className="text-sm text-neon-pink mb-2">CURRENT HIGHEST BID</p>
@@ -536,7 +503,6 @@ const UserProfile = () => {
                 </div>
               )}
 
-              {/* Bid Input */}
               <div className="space-y-4">
                 <label className="text-sm text-neon-pink font-medium">BID AMOUNT (BNB)</label>
                 <div className="relative">
@@ -551,7 +517,6 @@ const UserProfile = () => {
                 </div>
               </div>
 
-              {/* Auto Bid Button */}
               {selectedCapsule && (
                 <Button
                   variant="outline"
@@ -573,7 +538,6 @@ const UserProfile = () => {
                 </Button>
               )}
 
-              {/* Commission Info */}
               <div className="text-center space-y-2 p-4 bg-space-light/20 rounded-lg border border-neon-blue/20">
                 <p className="text-sm text-neon-blue">
                   ONCE ACCEPTED, THE CAPSULE CREATOR WILL RECEIVE 98% OF THE BID.
@@ -581,7 +545,6 @@ const UserProfile = () => {
                 </p>
               </div>
 
-              {/* Place Bid Button */}
               <Button
                 className="w-full py-4 rounded-lg bg-gradient-to-r from-neon-pink to-neon-blue text-white font-bold hover:opacity-90 transition-opacity"
                 onClick={handlePlaceBid}
@@ -597,3 +560,4 @@ const UserProfile = () => {
 };
 
 export default UserProfile;
+

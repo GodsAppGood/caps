@@ -20,6 +20,7 @@ type AuthContextType = {
   userProfile: UserProfile | null;
   signOut: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
+  uploadAvatar: (file: File) => Promise<string | null>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,6 +56,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUserProfile = async () => {
     if (user?.id) {
       await fetchUserProfile(user.id);
+    }
+  };
+
+  // Upload avatar image
+  const uploadAvatar = async (file: File): Promise<string | null> => {
+    if (!user) return null;
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+      
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('profile_images')
+        .upload(filePath, file, { upsert: true });
+      
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data } = supabase.storage
+        .from('profile_images')
+        .getPublicUrl(filePath);
+      
+      // Update user profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: data.publicUrl })
+        .eq('id', user.id);
+      
+      if (updateError) throw updateError;
+      
+      // Refresh the profile to get updated data
+      await refreshUserProfile();
+      
+      toast({
+        title: "Avatar updated",
+        description: "Your profile image has been updated successfully",
+      });
+      
+      return data.publicUrl;
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to upload profile image",
+        variant: "destructive",
+      });
+      return null;
     }
   };
 
@@ -142,6 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userProfile,
     signOut,
     refreshUserProfile,
+    uploadAvatar,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

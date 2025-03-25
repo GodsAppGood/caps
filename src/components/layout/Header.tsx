@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Package } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { WalletConnect } from "@/components/WalletConnect";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,6 +38,9 @@ const Header = () => {
             className="w-10 h-10 border-2 border-neon-blue transition-all hover:scale-105 cursor-pointer" 
             onClick={handleProfileClick}
           >
+            {userProfile?.avatar_url ? (
+              <AvatarImage src={userProfile.avatar_url} alt="Profile" />
+            ) : null}
             <AvatarFallback className="bg-space-dark text-neon-blue">{getAvatarText()}</AvatarFallback>
           </Avatar>
         </div>
