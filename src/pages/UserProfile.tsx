@@ -186,7 +186,7 @@ const UserProfile = () => {
       }
       
       // Place the bid - convert to string if number
-      await placeBid(String(selectedCapsule), bidAmount, user.id);
+      await placeBid(String(selectedCapsule), bidAmount);
       
       toast({
         title: "Bid Placed",
@@ -576,3 +576,4 @@ const UserProfile = () => {
 };
 
 export default UserProfile;
+
