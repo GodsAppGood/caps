@@ -49,3 +49,41 @@
     @apply bg-neon-blue/20 rounded-full hover:bg-neon-blue/40 transition-colors;
   }
 }
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-white via-neon-blue to-white bg-clip-text text-transparent;
+  }
+
+  .glass-morphism {
+    @apply backdrop-blur-xl bg-white/5 shadow-lg;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .stars-container {
+    animation: stars 120s linear infinite;
+  }
+
+  @keyframes stars {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-2000px);
+    }
+  }
+}

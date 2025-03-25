@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +12,13 @@ import {
   User,
   ChevronRight,
   ChevronLeft,
+  Star,
+  Twitter,
+  Discord,
+  Telegram,
+  ArrowDown,
+  Circle,
+  MessageSquare,
 } from "lucide-react";
 import {
   Card,
@@ -218,73 +226,213 @@ const Index = () => {
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted">
-      <div className="container mx-auto px-4 pt-20 pb-16 text-center">
-        <h1 className="text-4xl font-bold mb-6 text-primary">
-          Create Digital Time Capsules on the Blockchain
-        </h1>
-        <p className="text-xl mb-8 text-muted-foreground max-w-2xl mx-auto">
-          Securely store memories, messages, and media with our blockchain-powered time capsules.
-          Set a future date for opening or allow others to bid for early access.
-        </p>
-        <div className="flex justify-center gap-4">
-          {user ? (
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted overflow-x-hidden">
+      {/* Hero Block */}
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* Background Animation - stars */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-space-gradient opacity-80"></div>
+          <div className="stars-container absolute inset-0">
+            {Array.from({ length: 100 }).map((_, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full bg-white animate-pulse"
+                style={{
+                  width: `${Math.random() * 2 + 1}px`,
+                  height: `${Math.random() * 2 + 1}px`,
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                  animationDuration: `${Math.random() * 3 + 1}s`,
+                  animationDelay: `${Math.random() * 3}s`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Hero Content */}
+        <div className="container mx-auto px-4 pt-20 pb-16 text-center relative z-10">
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white uppercase animate-fade-in">
+            <span className="text-gradient">🌠 Unlock the Future</span>
+          </h1>
+          <h2 className="text-3xl md:text-4xl font-bold mb-8 text-white animate-fade-in" style={{ animationDelay: "0.2s" }}>
+            Create Digital Time Capsules on the Blockchain
+          </h2>
+          <p className="text-xl mb-12 text-white/80 max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: "0.4s" }}>
+            Store important memories, photos, and messages securely.
+            Set an opening date or launch an auction for early access!
+          </p>
+          <div className="flex justify-center gap-4 animate-fade-in" style={{ animationDelay: "0.6s" }}>
             <Button
               size="lg"
               onClick={() => navigate("/profile")}
-              className="bg-primary hover:bg-primary/90"
+              className="bg-neon-blue hover:bg-neon-blue/90 text-black text-lg px-8 py-6 rounded-full border border-white/20 shadow-lg shadow-neon-blue/30 transition-all duration-300 hover:scale-105"
             >
-              My Capsules
+              🚀 Create Capsule
             </Button>
-          ) : (
-            <Button
-              size="lg"
-              onClick={() => navigate("/profile")}
-              className="bg-primary hover:bg-primary/90"
-            >
-              Get Started
-            </Button>
+          </div>
+          <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 animate-bounce">
+            <ArrowDown className="text-white/60" size={32} />
+          </div>
+        </div>
+      </div>
+
+      {/* How It Works Section */}
+      <div className="py-24 bg-space-dark">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-16 text-center text-white">
+            How It Works
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {/* Step 1 */}
+            <div className="text-center">
+              <div className="bg-space-light p-6 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 border border-neon-blue/50 shadow-lg shadow-neon-blue/10">
+                <Package className="text-neon-blue" size={32} />
+              </div>
+              <h3 className="text-xl font-bold mb-4 text-white">🌀 Create a Capsule</h3>
+              <p className="text-white/70">
+                Upload photos or text, set an opening date, and create your capsule with just one click.
+              </p>
+            </div>
+            
+            {/* Step 2 */}
+            <div className="text-center">
+              <div className="bg-space-light p-6 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 border border-neon-pink/50 shadow-lg shadow-neon-pink/10">
+                <Lock className="text-neon-pink" size={32} />
+              </div>
+              <h3 className="text-xl font-bold mb-4 text-white">🚨 Grant Access</h3>
+              <p className="text-white/70">
+                Set a specific date or allow users to place bids to open your capsule earlier.
+              </p>
+            </div>
+            
+            {/* Step 3 */}
+            <div className="text-center">
+              <div className="bg-space-light p-6 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 border border-neon-green/50 shadow-lg shadow-neon-green/10">
+                <MessageSquare className="text-neon-green" size={32} />
+              </div>
+              <h3 className="text-xl font-bold mb-4 text-white">🎉 Reveal Content</h3>
+              <p className="text-white/70">
+                When a capsule opens, its content becomes accessible to everyone!
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Current Auctions Section */}
+      <div className="py-24 bg-gradient-to-b from-space-dark to-space">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-16 text-center text-white">
+            <DollarSign className="inline-block mr-2 mb-1" />
+            Current Auctions
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, index) => (
+                <Card key={index} className="bg-space-light/30 border border-white/10 animate-pulse glass-morphism">
+                  <CardHeader className="pb-2">
+                    <div className="h-6 bg-white/10 rounded w-2/3 mb-2"></div>
+                    <div className="h-4 bg-white/10 rounded w-1/2"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-4 bg-white/10 rounded w-full mb-2"></div>
+                    <div className="h-4 bg-white/10 rounded w-2/3"></div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              allCapsules
+                .filter(capsule => capsule.status === "closed" && capsule.initial_bid)
+                .slice(0, 6)
+                .map((capsule) => (
+                  <Card
+                    key={capsule.id}
+                    className="bg-space-light/30 border border-white/10 glass-morphism hover:shadow-lg hover:shadow-neon-blue/20 transition-all duration-300 hover:scale-105 cursor-pointer"
+                    onClick={() => handleViewCapsule(capsule)}
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-lg text-white">{capsule.name}</CardTitle>
+                        <Badge variant="outline" className="bg-neon-blue/20 text-white border-neon-blue/50">
+                          Bidding Open
+                        </Badge>
+                      </div>
+                      <CardDescription className="text-white/60">
+                        Created by {capsule.creator?.username || "Anonymous"}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-2 items-center text-sm text-white/60 mb-3">
+                        <Clock size={16} className="text-neon-blue" />
+                        <span>Opens {format(parseISO(capsule.open_date), "PP")}</span>
+                      </div>
+                      <div className="flex gap-2 items-center text-sm text-white/60 mb-4">
+                        <DollarSign size={16} className="text-neon-pink" />
+                        <span>Current bid: {capsule.current_bid || capsule.initial_bid} BNB</span>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        className="w-full border-neon-blue text-neon-blue hover:bg-neon-blue hover:text-black"
+                      >
+                        Place Bid
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+            )}
+          </div>
+          
+          {!isLoading && (
+            <div className="text-center mt-12">
+              <Button 
+                onClick={() => setCurrentPage(1)} 
+                variant="outline"
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                View All Auctions
+              </Button>
+            </div>
           )}
         </div>
       </div>
 
+      {/* This Week's Openings Section */}
       {todayCapsules.length > 0 && (
-        <div className="bg-muted/50 py-12">
+        <div className="py-24 bg-space">
           <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-bold mb-8 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-16 text-center text-white">
               <Calendar className="inline-block mr-2 mb-1" />
-              Time Capsules Opening Today
+              Opening This Week
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {todayCapsules.map((capsule) => (
                 <Card
                   key={capsule.id}
-                  className="bg-card hover:shadow-lg transition-shadow cursor-pointer border-primary/10"
+                  className="bg-space-light/30 border border-white/10 glass-morphism hover:shadow-lg hover:shadow-neon-green/20 transition-all duration-300 hover:scale-105 cursor-pointer"
                   onClick={() => handleViewCapsule(capsule)}
                 >
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg">{capsule.name}</CardTitle>
-                      <Badge variant={capsule.status === "opened" ? "default" : "outline"}>
+                      <CardTitle className="text-lg text-white">{capsule.name}</CardTitle>
+                      <Badge variant={capsule.status === "opened" ? "default" : "outline"} className={
+                        capsule.status === "opened" 
+                          ? "bg-neon-green/80 text-black" 
+                          : "bg-neon-green/20 text-white border-neon-green/50"
+                      }>
                         {capsule.status === "opened" ? "Opened" : "Unlocking Today"}
                       </Badge>
                     </div>
-                    <CardDescription>
-                      Created by{" "}
-                      {capsule.creator?.username || "Anonymous"}
+                    <CardDescription className="text-white/60">
+                      Created by {capsule.creator?.username || "Anonymous"}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex gap-2 items-center text-sm text-muted-foreground">
-                      <Clock size={16} />
+                    <div className="flex gap-2 items-center text-sm text-white/60">
+                      <Clock size={16} className="text-neon-green" />
                       <span>Opens {format(parseISO(capsule.open_date), "PP")}</span>
                     </div>
-                    {capsule.current_bid && (
-                      <div className="flex gap-2 items-center text-sm text-muted-foreground mt-2">
-                        <DollarSign size={16} />
-                        <span>Current bid: {capsule.current_bid} BNB</span>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -293,145 +441,102 @@ const Index = () => {
         </div>
       )}
 
-      <div className="container mx-auto px-4 py-16">
-        <h2 className="text-2xl font-bold mb-8 text-center">
-          <Package className="inline-block mr-2 mb-1" />
-          Explore Time Capsules
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {isLoading ? (
-            Array.from({ length: 6 }).map((_, index) => (
-              <Card key={index} className="bg-card/50 animate-pulse">
-                <CardHeader className="pb-2">
-                  <div className="h-6 bg-muted rounded w-2/3 mb-2"></div>
-                  <div className="h-4 bg-muted rounded w-1/2"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-4 bg-muted rounded w-full mb-2"></div>
-                  <div className="h-4 bg-muted rounded w-2/3"></div>
-                </CardContent>
-              </Card>
-            ))
-          ) : currentItems.length > 0 ? (
-            currentItems.map((capsule) => (
-              <Card
-                key={capsule.id}
-                className="bg-card hover:shadow-lg transition-shadow cursor-pointer border-primary/10"
-                onClick={() => handleViewCapsule(capsule)}
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{capsule.name}</CardTitle>
-                    <Badge variant={capsule.status === "opened" ? "default" : "outline"}>
-                      {capsule.status === "opened" ? "Opened" : "Sealed"}
-                    </Badge>
+      {/* Testimonials Section */}
+      <div className="py-24 bg-gradient-to-b from-space to-space-dark">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-16 text-center text-white">
+            <Star className="inline-block mr-2 mb-1 text-yellow-500" />
+            What People Say
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Testimonial 1 */}
+            <Card className="bg-space-light/30 border border-white/10 glass-morphism">
+              <CardContent className="pt-6">
+                <div className="flex items-start mb-4">
+                  <Avatar className="h-10 w-10 mr-4 border-2 border-neon-blue">
+                    <AvatarFallback className="bg-neon-blue/20 text-white">JD</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium text-white">John Doe</p>
+                    <p className="text-sm text-white/60">@johndoe</p>
                   </div>
-                  <CardDescription>
-                    Created by{" "}
-                    {capsule.creator?.username || "Anonymous"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2 items-center text-sm text-muted-foreground">
-                    <Clock size={16} />
-                    <span>
-                      {capsule.status === "opened"
-                        ? "Opened " + formatDistanceToNow(parseISO(capsule.updated_at), { addSuffix: true })
-                        : "Opens " + format(parseISO(capsule.open_date), "PP")}
-                    </span>
+                </div>
+                <p className="text-white/80 italic">
+                  "It was incredible to see a message from myself after a year! This project brings nostalgia to a whole new level."
+                </p>
+                <div className="flex mt-4">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} size={16} className="text-yellow-500 fill-yellow-500" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Testimonial 2 */}
+            <Card className="bg-space-light/30 border border-white/10 glass-morphism">
+              <CardContent className="pt-6">
+                <div className="flex items-start mb-4">
+                  <Avatar className="h-10 w-10 mr-4 border-2 border-neon-pink">
+                    <AvatarFallback className="bg-neon-pink/20 text-white">AS</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium text-white">Alice Smith</p>
+                    <p className="text-sm text-white/60">@alicesmith</p>
                   </div>
-                  {capsule.current_bid && (
-                    <div className="flex gap-2 items-center text-sm text-muted-foreground mt-2">
-                      <DollarSign size={16} />
-                      <span>Current bid: {capsule.current_bid} BNB</span>
-                    </div>
-                  )}
-                  {capsule.encryption_level && (
-                    <div className="flex gap-2 items-center text-sm text-muted-foreground mt-2">
-                      <Lock size={16} />
-                      <span>
-                        {capsule.encryption_level.charAt(0).toUpperCase() +
-                          capsule.encryption_level.slice(1)}{" "}
-                        encryption
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <div className="col-span-3 text-center py-12">
-              <p className="text-muted-foreground">No time capsules found</p>
-            </div>
-          )}
+                </div>
+                <p className="text-white/80 italic">
+                  "I created a capsule for my daughter to open on her 18th birthday. The blockchain ensures it will be there waiting for her."
+                </p>
+                <div className="flex mt-4">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} size={16} className="text-yellow-500 fill-yellow-500" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-
-        {!isLoading && allCapsules.length > itemsPerPage && (
-          <Pagination className="mt-8">
-            <PaginationContent>
-              {currentPage > 1 && (
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      paginate(currentPage - 1);
-                    }}
-                  />
-                </PaginationItem>
-              )}
-
-              {Array.from({ length: totalPages }, (_, i) => {
-                const pageNumber = i + 1;
-                if (
-                  pageNumber === 1 ||
-                  pageNumber === totalPages ||
-                  (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-                ) {
-                  return (
-                    <PaginationItem key={pageNumber}>
-                      <PaginationLink
-                        href="#"
-                        isActive={pageNumber === currentPage}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          paginate(pageNumber);
-                        }}
-                      >
-                        {pageNumber}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                } else if (
-                  pageNumber === currentPage - 2 ||
-                  pageNumber === currentPage + 2
-                ) {
-                  return (
-                    <PaginationItem key={pageNumber}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  );
-                }
-                return null;
-              })}
-
-              {currentPage < totalPages && (
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      paginate(currentPage + 1);
-                    }}
-                  />
-                </PaginationItem>
-              )}
-            </PaginationContent>
-          </Pagination>
-        )}
       </div>
 
+      {/* Footer */}
+      <footer className="py-12 bg-space-dark border-t border-white/10">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-6 md:mb-0">
+              <h3 className="text-xl font-bold text-white mb-2">Cosmic Capsules</h3>
+              <p className="text-white/60 text-sm">Preserving memories on the blockchain</p>
+            </div>
+            
+            <div className="flex gap-6">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-neon-blue transition-colors">
+                <Twitter size={24} />
+              </a>
+              <a href="https://discord.com" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-neon-blue transition-colors">
+                <Discord size={24} />
+              </a>
+              <a href="https://telegram.org" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-neon-blue transition-colors">
+                <Telegram size={24} />
+              </a>
+            </div>
+          </div>
+          
+          <div className="mt-8 pt-6 border-t border-white/10 text-center">
+            <a 
+              href="https://gitcoin.co" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center text-white/60 hover:text-neon-blue transition-colors"
+            >
+              <span className="mr-2">Support us on Gitcoin Grants</span>
+              <ChevronRight size={16} />
+            </a>
+            <p className="text-white/40 text-sm mt-4">&copy; {new Date().getFullYear()} Cosmic Capsules. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+
+      {/* Original dialog and other functionality */}
       {selectedCapsule && (
         <Dialog open={showCapsuleDetails} onOpenChange={setShowCapsuleDetails}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
