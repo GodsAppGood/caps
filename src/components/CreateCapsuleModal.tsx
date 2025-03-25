@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -108,7 +107,6 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
         message: message,
         open_date: selectedDate.toISOString(),
         auction_enabled: auctionEnabled,
-        // Fix: Use string literal for status to match CapsuleCreate type
         status: 'closed' as 'closed'
       };
       
@@ -214,7 +212,7 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
                   {selectedDate ? format(selectedDate, "PPP") : "Select unlock date..."}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-space-dark border-neon-blue/20">
+              <PopoverContent className="w-auto p-0 bg-space-dark border-neon-blue/20 z-50">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
