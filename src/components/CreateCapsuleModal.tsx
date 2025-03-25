@@ -108,7 +108,8 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
         message: message,
         open_date: selectedDate.toISOString(),
         auction_enabled: auctionEnabled,
-        status: 'closed'
+        // Fix: Use string literal for status to match CapsuleCreate type
+        status: 'closed' as 'closed'
       };
       
       const result = await createCapsule(capsuleData);
