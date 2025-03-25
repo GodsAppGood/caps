@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { createCapsule } from "@/services/capsuleService";
 
 interface CreateCapsuleModalProps {
   isOpen: boolean;
@@ -100,25 +101,17 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
         imageUrl = supabase.storage.from('capsule_images').getPublicUrl(filePath).data.publicUrl;
       }
       
-      const { data, error } = await supabase
-        .from('capsules')
-        .insert({
-          name: capsuleName,
-          creator_id: userProfile.id,
-          image_url: imageUrl,
-          message: message,
-          unlock_date: selectedDate.toISOString(),
-          auction_enabled: auctionEnabled,
-          status: 'closed',
-          highest_bid: 0,
-          highest_bidder: null
-        })
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
+      const capsuleData = {
+        name: capsuleName,
+        creator_id: userProfile.id,
+        image_url: imageUrl,
+        message: message,
+        open_date: selectedDate.toISOString(),
+        auction_enabled: auctionEnabled,
+        status: 'closed'
+      };
+      
+      const result = await createCapsule(capsuleData);
 
       toast({
         title: "Success",
