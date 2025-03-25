@@ -73,7 +73,6 @@ const AICapsuleWidget = () => {
     try {
       setIsLoading(true);
       
-      // Upload image to Supabase storage if an image is selected
       let imageUrl: string | null = null;
       if (selectedImage) {
         const fileExt = selectedImage.name.split('.').pop();
@@ -91,7 +90,6 @@ const AICapsuleWidget = () => {
         imageUrl = supabase.storage.from('capsule_images').getPublicUrl(filePath).data.publicUrl;
       }
       
-      // Create the capsule in Supabase
       await createCapsule({
         name: eventName,
         creator_id: user.id,
@@ -106,7 +104,6 @@ const AICapsuleWidget = () => {
         description: "Your time capsule has been created successfully!",
       });
 
-      // Reset form
       setEventName("");
       setMessage("");
       setSelectedDate(undefined);
@@ -128,7 +125,6 @@ const AICapsuleWidget = () => {
 
   return (
     <>
-      {/* Floating AI Button */}
       <button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-8 right-8 w-16 h-16 rounded-full bg-gradient-to-r from-neon-blue to-neon-pink border border-white/20 backdrop-blur-lg shadow-lg hover:scale-110 transition-all duration-300 group z-50"
@@ -136,7 +132,6 @@ const AICapsuleWidget = () => {
         <Bot className="w-8 h-8 mx-auto text-white" />
       </button>
 
-      {/* AI Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="bg-space-dark/95 backdrop-blur-xl border border-neon-blue/20 rounded-xl w-full max-w-lg">
           <DialogHeader>
@@ -153,7 +148,6 @@ const AICapsuleWidget = () => {
             </TabsList>
 
             <TabsContent value="content" className="space-y-6">
-              {/* Event Name Input */}
               <div className="space-y-2">
                 <label className="text-sm text-neon-blue font-medium">EVENT NAME</label>
                 <Input
@@ -164,7 +158,6 @@ const AICapsuleWidget = () => {
                 />
               </div>
 
-              {/* Message Input */}
               <div className="space-y-2">
                 <label className="text-sm text-neon-blue font-medium">MESSAGE</label>
                 <Textarea
@@ -175,7 +168,6 @@ const AICapsuleWidget = () => {
                 />
               </div>
 
-              {/* Image Upload */}
               <div className="space-y-2">
                 <label className="text-sm text-neon-blue font-medium">EVENT IMAGE</label>
                 <div className="relative h-40 border-2 border-dashed border-neon-blue/20 rounded-lg overflow-hidden group hover:border-neon-blue/40 transition-colors">
@@ -207,7 +199,6 @@ const AICapsuleWidget = () => {
                 </div>
               </div>
 
-              {/* Date Selector */}
               <div className="space-y-2">
                 <label className="text-sm text-neon-blue font-medium">OPENING DATE</label>
                 <Popover>
@@ -233,7 +224,6 @@ const AICapsuleWidget = () => {
             </TabsContent>
 
             <TabsContent value="security" className="space-y-6">
-              {/* Encryption Level */}
               <div className="space-y-4">
                 <label className="text-sm text-neon-blue font-medium">ENCRYPTION LEVEL</label>
                 <div className="grid grid-cols-3 gap-4">
@@ -278,7 +268,6 @@ const AICapsuleWidget = () => {
                 </p>
               </div>
 
-              {/* Time Lock Settings */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
@@ -289,7 +278,6 @@ const AICapsuleWidget = () => {
                 </div>
               </div>
 
-              {/* Access Control */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
@@ -302,7 +290,6 @@ const AICapsuleWidget = () => {
             </TabsContent>
 
             <TabsContent value="bidding" className="space-y-6">
-              {/* Allow Bidding Toggle */}
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <Label htmlFor="allow-bidding" className="text-sm text-neon-blue font-medium">ALLOW BIDDING</Label>
@@ -315,7 +302,6 @@ const AICapsuleWidget = () => {
                 />
               </div>
 
-              {/* Minimum Bid */}
               {allowBidding && (
                 <div className="space-y-2">
                   <label className="text-sm text-neon-blue font-medium">MINIMUM BID (BNB)</label>
@@ -332,7 +318,6 @@ const AICapsuleWidget = () => {
                 </div>
               )}
 
-              {/* Auto-Accept Threshold */}
               {allowBidding && (
                 <div className="space-y-2">
                   <label className="text-sm text-neon-blue font-medium">AUTO-ACCEPT THRESHOLD (OPTIONAL)</label>
@@ -350,7 +335,6 @@ const AICapsuleWidget = () => {
                 </div>
               )}
 
-              {/* Time Constraints */}
               {allowBidding && (
                 <div className="space-y-2">
                   <label className="text-sm text-neon-blue font-medium">BIDDING TIME WINDOW</label>
@@ -381,7 +365,6 @@ const AICapsuleWidget = () => {
                 </div>
               )}
 
-              {/* Bidding Fee Info */}
               {allowBidding && (
                 <div className="p-4 rounded-lg border border-neon-blue/20 bg-space-light/20">
                   <p className="text-xs text-white/70">
@@ -392,7 +375,6 @@ const AICapsuleWidget = () => {
             </TabsContent>
           </Tabs>
 
-          {/* Create Button */}
           <Button
             className="w-full bg-gradient-to-r from-neon-blue to-neon-pink text-white hover:opacity-90 transition-opacity mt-6"
             onClick={handleCreateCapsule}
