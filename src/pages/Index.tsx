@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Timer, Star, Lock, DollarSign, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
@@ -8,68 +9,79 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { getAllCapsules, getTodayCapsules, Capsule } from "@/services/capsuleService";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [selectedCapsule, setSelectedCapsule] = useState<number | null>(null);
   const [betAmount, setBetAmount] = useState("");
+  const [todayCapsules, setTodayCapsules] = useState<any[]>([]);
+  const [allCapsules, setAllCapsules] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Sample data for capsules
-  const todayCapsules = [
-    { 
-      id: 1, 
-      name: "STELLAR MEMORIES", 
-      openTime: "12:00:00", 
-      creator: { name: "ALEX", avatar: "", verified: true },
-      highestBid: 1.5
-    },
-    { 
-      id: 2, 
-      name: "COSMIC THOUGHTS", 
-      openTime: "08:22:15", 
-      creator: { name: "MARIA", avatar: "", verified: true },
-      highestBid: 2.8
-    },
-    { 
-      id: 3, 
-      name: "SPACE DREAMS", 
-      openTime: "16:45:30", 
-      creator: { name: "JOHN", avatar: "", verified: false },
-      highestBid: 0.75
-    },
-    { 
-      id: 4, 
-      name: "QUANTUM VAULT", 
-      openTime: "22:10:45", 
-      creator: { name: "SARA", avatar: "", verified: true },
-      highestBid: 3.2
-    },
-    { 
-      id: 5, 
-      name: "NEBULA NOTES", 
-      openTime: "04:30:20", 
-      creator: { name: "DAVID", avatar: "", verified: false },
-      highestBid: 1.0
-    },
-    { 
-      id: 6, 
-      name: "GALACTIC WHISPERS", 
-      openTime: "14:15:00", 
-      creator: { name: "EMMA", avatar: "", verified: true },
-      highestBid: 5.5
-    },
-  ];
-
-  const allCapsules = [
-    { id: 1, name: "STELLAR MEMORIES", openDate: "2024-12-31", creator: { name: "ALEX", avatar: "", verified: true }, highestBid: 1.5 },
-    { id: 2, name: "COSMIC THOUGHTS", openDate: "2024-10-15", creator: { name: "MARIA", avatar: "", verified: true }, highestBid: 2.8 },
-    { id: 3, name: "SPACE DREAMS", openDate: "2024-11-20", creator: { name: "JOHN", avatar: "", verified: false }, highestBid: 0.75 },
-    { id: 4, name: "QUANTUM VAULT", openDate: "2025-01-15", creator: { name: "SARA", avatar: "", verified: true }, highestBid: 3.2 },
-    { id: 5, name: "NEBULA NOTES", openDate: "2024-09-22", creator: { name: "DAVID", avatar: "", verified: false }, highestBid: 1.0 },
-    { id: 6, name: "GALACTIC WHISPERS", openDate: "2024-08-30", creator: { name: "EMMA", avatar: "", verified: true }, highestBid: 5.5 },
-  ];
+  useEffect(() => {
+    const fetchCapsules = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch today's capsules and all capsules
+        const todayData = await getTodayCapsules();
+        const allData = await getAllCapsules();
+        
+        // Format the data for display
+        const formattedTodayCapsules = todayData.map((capsule) => ({
+          id: capsule.id,
+          name: capsule.name,
+          openTime: new Date(capsule.open_date).toLocaleTimeString(),
+          creator: { 
+            name: capsule.creator?.username || "ANONYMOUS", 
+            avatar: capsule.creator?.avatar_url || "", 
+            verified: true 
+          },
+          highestBid: capsule.initial_bid
+        }));
+        
+        const formattedAllCapsules = allData.map((capsule) => ({
+          id: capsule.id,
+          name: capsule.name,
+          openDate: new Date(capsule.open_date).toLocaleDateString(),
+          creator: { 
+            name: capsule.creator?.username || "ANONYMOUS", 
+            avatar: capsule.creator?.avatar_url || "", 
+            verified: true 
+          },
+          highestBid: capsule.initial_bid
+        }));
+        
+        setTodayCapsules(formattedTodayCapsules);
+        setAllCapsules(formattedAllCapsules);
+      } catch (error) {
+        console.error("Error fetching capsules:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load capsules",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchCapsules();
+  }, [toast]);
 
   const handlePlaceBid = () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to place a bid",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!betAmount || parseFloat(betAmount) <= 0) {
       toast({
         title: "Error",

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,17 +11,21 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { createCapsule } from "@/services/capsuleService";
 
 const AICapsuleWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [eventName, setEventName] = useState("");
   const [message, setMessage] = useState("");
-  const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [allowBidding, setAllowBidding] = useState(false);
   const [minimumBid, setMinimumBid] = useState("0.1");
-  const [encryptionLevel, setEncryptionLevel] = useState("standard");
+  const [encryptionLevel, setEncryptionLevel] = useState<"standard" | "enhanced" | "quantum">("standard");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -35,7 +38,16 @@ const AICapsuleWidget = () => {
     }
   };
 
-  const handleCreateCapsule = () => {
+  const handleCreateCapsule = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to create a time capsule",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!eventName) {
       toast({
         title: "Error",
@@ -54,30 +66,44 @@ const AICapsuleWidget = () => {
       return;
     }
 
-    toast({
-      title: "Success",
-      description: "Your time capsule has been created successfully!",
-    });
+    try {
+      setIsLoading(true);
+      
+      // Create the capsule in Supabase
+      await createCapsule({
+        name: eventName,
+        open_date: selectedDate.toISOString(),
+        initial_bid: parseFloat(minimumBid),
+        message: message,
+        image_url: selectedImage || undefined,
+        encryption_level: encryptionLevel,
+        winner_id: undefined,
+      });
 
-    // Reset form
-    setEventName("");
-    setMessage("");
-    setSelectedDate(undefined);
-    setSelectedImage(null);
-    setAllowBidding(false);
-    setMinimumBid("0.1");
-    setEncryptionLevel("standard");
-    setIsOpen(false);
+      toast({
+        title: "Success",
+        description: "Your time capsule has been created successfully!",
+      });
 
-    console.log("Creating capsule:", { 
-      eventName, 
-      message, 
-      selectedDate, 
-      selectedImage, 
-      allowBidding, 
-      minimumBid, 
-      encryptionLevel 
-    });
+      // Reset form
+      setEventName("");
+      setMessage("");
+      setSelectedDate(undefined);
+      setSelectedImage(null);
+      setAllowBidding(false);
+      setMinimumBid("0.1");
+      setEncryptionLevel("standard");
+      setIsOpen(false);
+    } catch (error: any) {
+      console.error("Error creating capsule:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create time capsule",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Timer, DollarSign, ArrowLeft, Bell, Settings, LogOut, History, Wallet } from "lucide-react";
@@ -9,19 +8,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { WalletConnect } from "@/components/WalletConnect";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { getUserCapsules } from "@/services/capsuleService";
 
 const UserProfile = () => {
   const [selectedCapsule, setSelectedCapsule] = useState<number | null>(null);
   const [acceptBidCapsule, setAcceptBidCapsule] = useState<number | null>(null);
   const [betAmount, setBetAmount] = useState("");
+  const [userCapsules, setUserCapsules] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-
-  // Sample data for user's capsules
-  const userCapsules = [
-    { id: 1, name: "STELLAR MEMORIES", openDate: "2024-12-31", highestBid: 1.5, bids: 3 },
-    { id: 2, name: "COSMIC THOUGHTS", openDate: "2024-10-15", highestBid: 2.8, bids: 7 },
-    { id: 3, name: "SPACE DREAMS", openDate: "2024-11-20", highestBid: 0.75, bids: 2 },
-  ];
+  const { user, signOut } = useAuth();
 
   // Sample data for bid requests
   const bidRequests = [
@@ -29,6 +26,41 @@ const UserProfile = () => {
     { id: 2, capsuleId: 1, capsuleName: "STELLAR MEMORIES", bidder: "0x5d6...7e8f", amount: 1.5, timestamp: "8 hours ago" },
     { id: 3, capsuleId: 3, capsuleName: "SPACE DREAMS", bidder: "0x9a0...1b2c", amount: 0.75, timestamp: "1 day ago" },
   ];
+
+  useEffect(() => {
+    const fetchUserCapsules = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Fetch capsules created by the current user
+        const data = await getUserCapsules(user.id);
+        
+        // Format the data for display
+        const formattedCapsules = data.map((capsule) => ({
+          id: capsule.id,
+          name: capsule.name,
+          openDate: new Date(capsule.open_date).toLocaleDateString(),
+          highestBid: capsule.initial_bid,
+          bids: 0 // Currently not tracking bids
+        }));
+        
+        setUserCapsules(formattedCapsules);
+      } catch (error) {
+        console.error("Error fetching user capsules:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load your capsules",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchUserCapsules();
+  }, [user, toast]);
 
   const handleAcceptBid = () => {
     toast({
@@ -63,6 +95,23 @@ const UserProfile = () => {
     
     setBetAmount("");
     setSelectedCapsule(null);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out",
+      });
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
