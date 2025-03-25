@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -73,6 +72,7 @@ const Index = () => {
           getAllCapsules(),
           getTodayCapsules(),
         ]);
+        
         setAllCapsules(allCapsulesData);
         setTodayCapsules(todayCapsulesData);
       } catch (error) {
@@ -108,7 +108,6 @@ const Index = () => {
     setSelectedCapsule(capsule);
     setShowCapsuleDetails(true);
     await fetchBids(capsule.id);
-    // Reset bid amount
     setBidAmount("");
   };
 
@@ -155,7 +154,6 @@ const Index = () => {
         description: "Your bid has been placed successfully",
       });
       
-      // Refresh capsule details and bids
       const updatedCapsules = allCapsules.map(c => 
         c.id === selectedCapsule.id 
           ? { ...c, current_bid: amount, highest_bidder_id: user.id } 
@@ -163,13 +161,10 @@ const Index = () => {
       );
       setAllCapsules(updatedCapsules);
       
-      // Update selected capsule
       setSelectedCapsule({ ...selectedCapsule, current_bid: amount, highest_bidder_id: user.id });
       
-      // Refresh bids
       await fetchBids(selectedCapsule.id);
       
-      // Reset bid amount
       setBidAmount("");
     } catch (error: any) {
       console.error("Error placing bid:", error);
@@ -195,7 +190,6 @@ const Index = () => {
         description: "You have accepted the bid. The capsule is now opened!",
       });
       
-      // Update capsule status locally
       const updatedCapsules = allCapsules.map(c => 
         c.id === selectedCapsule.id 
           ? { ...c, status: 'opened' } 
@@ -203,10 +197,7 @@ const Index = () => {
       );
       setAllCapsules(updatedCapsules);
       
-      // Close dialog
       setShowCapsuleDetails(false);
-      
-      // You might want to navigate to the opened capsule view or refresh the current view
     } catch (error: any) {
       console.error("Error accepting bid:", error);
       toast({
@@ -219,7 +210,6 @@ const Index = () => {
     }
   };
 
-  // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = allCapsules.slice(indexOfFirstItem, indexOfLastItem);
@@ -229,7 +219,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
-      {/* Hero Section */}
       <div className="container mx-auto px-4 pt-20 pb-16 text-center">
         <h1 className="text-4xl font-bold mb-6 text-primary">
           Create Digital Time Capsules on the Blockchain
@@ -259,7 +248,6 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Today's Capsules Section */}
       {todayCapsules.length > 0 && (
         <div className="bg-muted/50 py-12">
           <div className="container mx-auto px-4">
@@ -305,7 +293,6 @@ const Index = () => {
         </div>
       )}
 
-      {/* All Capsules Section */}
       <div className="container mx-auto px-4 py-16">
         <h2 className="text-2xl font-bold mb-8 text-center">
           <Package className="inline-block mr-2 mb-1" />
@@ -314,7 +301,6 @@ const Index = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading ? (
-            // Loading skeleton
             Array.from({ length: 6 }).map((_, index) => (
               <Card key={index} className="bg-card/50 animate-pulse">
                 <CardHeader className="pb-2">
@@ -381,7 +367,6 @@ const Index = () => {
           )}
         </div>
 
-        {/* Pagination */}
         {!isLoading && allCapsules.length > itemsPerPage && (
           <Pagination className="mt-8">
             <PaginationContent>
@@ -399,7 +384,6 @@ const Index = () => {
 
               {Array.from({ length: totalPages }, (_, i) => {
                 const pageNumber = i + 1;
-                // Show first page, last page, and pages around current page
                 if (
                   pageNumber === 1 ||
                   pageNumber === totalPages ||
@@ -448,7 +432,6 @@ const Index = () => {
         )}
       </div>
 
-      {/* Capsule Detail Dialog */}
       {selectedCapsule && (
         <Dialog open={showCapsuleDetails} onOpenChange={setShowCapsuleDetails}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -675,7 +658,6 @@ const Index = () => {
         </Dialog>
       )}
 
-      {/* AI Capsule Creation Widget */}
       <AICapsuleWidget />
     </div>
   );

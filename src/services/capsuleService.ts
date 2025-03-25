@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { createCapsuleWithPayment, placeBidOnChain, acceptBidOnChain } from "@/lib/contractHelpers";
 
@@ -183,6 +182,17 @@ export const acceptBid = async (capsuleId: string, bidId: string) => {
   return data;
 };
 
+// Helper function to safely process creator data
+const processCreator = (creator: any) => {
+  if (!creator || typeof creator !== 'object') return undefined;
+  
+  return {
+    id: creator.id || '',
+    username: creator.username,
+    avatar_url: creator.avatar_url
+  };
+};
+
 // Get all capsules
 export const getAllCapsules = async (): Promise<Capsule[]> => {
   const { data, error } = await supabase
@@ -202,15 +212,11 @@ export const getAllCapsules = async (): Promise<Capsule[]> => {
     throw error;
   }
   
-  // We need to properly handle the creator relationship and ensure the status is properly typed
+  // Convert the data to conform to the Capsule type
   return (data || []).map(capsule => ({
     ...capsule,
-    status: capsule.status === 'opened' ? 'opened' : 'closed',
-    creator: capsule.creator && typeof capsule.creator === 'object' ? {
-      id: capsule.creator.id,
-      username: capsule.creator.username,
-      avatar_url: capsule.creator.avatar_url
-    } : undefined
+    status: capsule.status === 'opened' ? 'opened' : 'closed' as 'opened' | 'closed',
+    creator: processCreator(capsule.creator)
   })) as Capsule[];
 };
 
@@ -239,15 +245,11 @@ export const getTodayCapsules = async (): Promise<Capsule[]> => {
     throw error;
   }
   
-  // Ensure data conforms to the Capsule type by mapping status to the expected enum
+  // Convert the data to conform to the Capsule type
   return (data || []).map(capsule => ({
     ...capsule,
-    status: capsule.status === 'opened' ? 'opened' : 'closed',
-    creator: capsule.creator && typeof capsule.creator === 'object' ? {
-      id: capsule.creator.id,
-      username: capsule.creator.username,
-      avatar_url: capsule.creator.avatar_url
-    } : undefined
+    status: capsule.status === 'opened' ? 'opened' : 'closed' as 'opened' | 'closed',
+    creator: processCreator(capsule.creator)
   })) as Capsule[];
 };
 
@@ -271,15 +273,11 @@ export const getUserCapsules = async (userId: string): Promise<Capsule[]> => {
     throw error;
   }
   
-  // Ensure data conforms to the Capsule type by mapping status to the expected enum
+  // Convert the data to conform to the Capsule type
   return (data || []).map(capsule => ({
     ...capsule,
-    status: capsule.status === 'opened' ? 'opened' : 'closed',
-    creator: capsule.creator && typeof capsule.creator === 'object' ? {
-      id: capsule.creator.id,
-      username: capsule.creator.username,
-      avatar_url: capsule.creator.avatar_url
-    } : undefined
+    status: capsule.status === 'opened' ? 'opened' : 'closed' as 'opened' | 'closed',
+    creator: processCreator(capsule.creator)
   })) as Capsule[];
 };
 
@@ -303,15 +301,11 @@ export const getCapsuleById = async (id: string): Promise<Capsule> => {
     throw error;
   }
   
-  // Ensure data conforms to the Capsule type by mapping status to the expected enum
+  // Convert the data to conform to the Capsule type
   return {
     ...data,
-    status: data.status === 'opened' ? 'opened' : 'closed',
-    creator: data.creator && typeof data.creator === 'object' ? {
-      id: data.creator.id,
-      username: data.creator.username,
-      avatar_url: data.creator.avatar_url
-    } : undefined
+    status: data.status === 'opened' ? 'opened' : 'closed' as 'opened' | 'closed',
+    creator: processCreator(data.creator)
   } as Capsule;
 };
 
