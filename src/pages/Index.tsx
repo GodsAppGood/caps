@@ -10,6 +10,9 @@ import FeatureSection from "@/components/home/FeatureSection";
 import AuctionCarousel from "@/components/home/AuctionCarousel";
 import UpcomingCapsules from "@/components/home/UpcomingCapsules";
 import Testimonials from "@/components/home/Testimonials";
+import CreateCapsuleModal from "@/components/CreateCapsuleModal";
+import { Button } from "@/components/ui/button";
+import { Rocket } from "lucide-react";
 
 const Index = () => {
   const { user } = useAuth();
@@ -19,6 +22,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [auctionCapsules, setAuctionCapsules] = useState<Capsule[]>([]);
   const [upcomingCapsules, setUpcomingCapsules] = useState<Capsule[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -57,11 +61,28 @@ const Index = () => {
     <div className="min-h-screen bg-space-gradient text-white overflow-x-hidden">
       <Header />
       <Hero />
+      
+      {/* Floating Create Capsule Button */}
+      <div className="fixed bottom-8 right-8 z-50">
+        <Button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="rounded-full px-6 py-6 bg-gradient-to-r from-neon-pink to-neon-blue hover:opacity-90 transition-all shadow-lg hover:scale-105"
+        >
+          <Rocket className="w-6 h-6 mr-2" />
+          CREATE CAPSULE
+        </Button>
+      </div>
+      
       <FeatureSection />
       <AuctionCarousel auctionCapsules={auctionCapsules} />
       <UpcomingCapsules upcomingCapsules={upcomingCapsules} />
       <Testimonials />
       <Footer />
+      
+      <CreateCapsuleModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+      />
     </div>
   );
 };

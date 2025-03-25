@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export type Capsule = {
@@ -18,6 +17,7 @@ export type Capsule = {
   creator?: {
     username?: string;
   };
+  unlock_date?: string;
 };
 
 export type CapsuleBid = {
@@ -36,7 +36,8 @@ export type CapsuleCreate = {
   creator_id: string;
   image_url?: string | null;
   message?: string | null;
-  open_date: string;
+  open_date?: string;
+  unlock_date?: string;
   auction_enabled: boolean;
   status?: 'open' | 'closed';
   current_bid?: number;
@@ -52,7 +53,7 @@ export const createCapsule = async (capsuleData: CapsuleCreate) => {
         creator_id: capsuleData.creator_id,
         image_url: capsuleData.image_url,
         message: capsuleData.message,
-        open_date: capsuleData.open_date,
+        open_date: capsuleData.open_date || capsuleData.unlock_date,
         auction_enabled: capsuleData.auction_enabled,
         created_at: new Date().toISOString(),
         status: 'open',
@@ -75,7 +76,6 @@ export const createCapsule = async (capsuleData: CapsuleCreate) => {
   }
 };
 
-// Add a function to place a bid
 export const placeBid = async (capsuleId: string, bidAmount: number) => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -84,7 +84,6 @@ export const placeBid = async (capsuleId: string, bidAmount: number) => {
       throw new Error('User must be authenticated to place a bid');
     }
 
-    // Insert bid into capsule_bids table
     const { data: bidData, error: bidError } = await supabase
       .from('capsule_bids')
       .insert({
@@ -101,7 +100,6 @@ export const placeBid = async (capsuleId: string, bidAmount: number) => {
       throw bidError;
     }
 
-    // Update capsule with highest bid
     const { data: capsuleData, error: capsuleError } = await supabase
       .from('capsules')
       .update({ 
@@ -124,7 +122,6 @@ export const placeBid = async (capsuleId: string, bidAmount: number) => {
   }
 };
 
-// Get all capsules
 export const getAllCapsules = async (): Promise<Capsule[]> => {
   try {
     const { data, error } = await supabase
@@ -142,7 +139,6 @@ export const getAllCapsules = async (): Promise<Capsule[]> => {
       throw error;
     }
 
-    // Cast the data to ensure it matches our Capsule type
     return (data || []).map(capsule => ({
       ...capsule,
       status: capsule.status as 'open' | 'closed'
@@ -153,7 +149,6 @@ export const getAllCapsules = async (): Promise<Capsule[]> => {
   }
 };
 
-// Get capsules created by a specific user
 export const getUserCapsules = async (userId: string): Promise<Capsule[]> => {
   try {
     const { data, error } = await supabase
@@ -172,7 +167,6 @@ export const getUserCapsules = async (userId: string): Promise<Capsule[]> => {
       throw error;
     }
 
-    // Cast the data to ensure it matches our Capsule type
     return (data || []).map(capsule => ({
       ...capsule,
       status: capsule.status as 'open' | 'closed'
@@ -183,7 +177,6 @@ export const getUserCapsules = async (userId: string): Promise<Capsule[]> => {
   }
 };
 
-// Get bids for a specific capsule
 export const getCapsuleBids = async (capsuleId: string): Promise<CapsuleBid[]> => {
   try {
     const { data, error } = await supabase
@@ -202,7 +195,6 @@ export const getCapsuleBids = async (capsuleId: string): Promise<CapsuleBid[]> =
       throw error;
     }
 
-    // Transform the data to match our CapsuleBid type
     return (data || []).map(bid => ({
       ...bid,
       bidder: bid.bidder as CapsuleBid['bidder']
@@ -213,15 +205,13 @@ export const getCapsuleBids = async (capsuleId: string): Promise<CapsuleBid[]> =
   }
 };
 
-// Accept a bid for a capsule
 export const acceptBid = async (capsuleId: string, bidId: string) => {
   try {
-    // Update capsule status to closed
     const { data: capsuleData, error: capsuleError } = await supabase
       .from('capsules')
       .update({ 
         status: 'closed',
-        open_date: new Date().toISOString() // Immediately unlock the capsule
+        open_date: new Date().toISOString()
       })
       .eq('id', capsuleId)
       .select()
