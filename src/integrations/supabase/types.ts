@@ -54,6 +54,7 @@ export type Database = {
           id: string
           image_url: string | null
           initial_bid: number
+          ipfs_hash: string | null
           message: string | null
           name: string
           open_date: string
@@ -70,6 +71,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           initial_bid?: number
+          ipfs_hash?: string | null
           message?: string | null
           name: string
           open_date: string
@@ -86,6 +88,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           initial_bid?: number
+          ipfs_hash?: string | null
           message?: string | null
           name?: string
           open_date?: string

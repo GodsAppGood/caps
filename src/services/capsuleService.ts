@@ -70,7 +70,8 @@ export const createCapsule = async (capsuleData: CapsuleCreate, userId: string) 
       ...capsuleData,
       creator_id: userId,
       current_bid: capsuleData.initial_bid,
-      ipfs_hash: ipfsHash
+      ipfs_hash: ipfsHash,
+      status: 'closed' as 'opened' | 'closed'
     })
     .select()
     .single();
@@ -237,7 +238,8 @@ export const getAllCapsules = async (): Promise<Capsule[]> => {
     ...capsule,
     // Explicitly cast the status to the correct type
     status: capsule.status === 'opened' ? 'opened' : 'closed' as 'opened' | 'closed',
-    creator: processCreator(capsule.creator)
+    creator: processCreator(capsule.creator),
+    ipfs_hash: capsule.ipfs_hash || undefined
   })) as Capsule[];
 };
 
@@ -271,7 +273,8 @@ export const getTodayCapsules = async (): Promise<Capsule[]> => {
     ...capsule,
     // Explicitly cast the status to the correct type
     status: capsule.status === 'opened' ? 'opened' : 'closed' as 'opened' | 'closed',
-    creator: processCreator(capsule.creator)
+    creator: processCreator(capsule.creator),
+    ipfs_hash: capsule.ipfs_hash || undefined
   })) as Capsule[];
 };
 
@@ -300,7 +303,8 @@ export const getUserCapsules = async (userId: string): Promise<Capsule[]> => {
     ...capsule,
     // Explicitly cast the status to the correct type
     status: capsule.status === 'opened' ? 'opened' : 'closed' as 'opened' | 'closed',
-    creator: processCreator(capsule.creator)
+    creator: processCreator(capsule.creator),
+    ipfs_hash: capsule.ipfs_hash || undefined
   })) as Capsule[];
 };
 
@@ -361,7 +365,8 @@ export const getCapsuleById = async (id: string): Promise<Capsule> => {
     ...data,
     // Explicitly cast the status to the correct type
     status: data.status === 'opened' ? 'opened' : 'closed' as 'opened' | 'closed',
-    creator: processCreator(data.creator)
+    creator: processCreator(data.creator),
+    ipfs_hash: data.ipfs_hash || undefined
   } as Capsule;
 };
 
