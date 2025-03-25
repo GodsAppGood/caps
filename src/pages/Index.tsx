@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -61,11 +60,9 @@ const Index = () => {
     try {
       const data = await getAllCapsules();
       if (data && data.length) {
-        // Filter for auction capsules (those with bidding enabled)
         const auctionEnabled = data.filter(capsule => capsule.current_bid !== undefined);
-        setAuctionCapsules(auctionEnabled.slice(0, 6)); // Show max 6 capsules
+        setAuctionCapsules(auctionEnabled.slice(0, 6));
         
-        // Filter for upcoming capsules (those opening within 7 days)
         const now = new Date();
         const oneWeekFromNow = new Date(now);
         oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
@@ -74,7 +71,7 @@ const Index = () => {
           const openDate = new Date(capsule.open_date);
           return openDate > now && openDate <= oneWeekFromNow;
         });
-        setUpcomingCapsules(upcoming.slice(0, 4)); // Show max 4 capsules
+        setUpcomingCapsules(upcoming.slice(0, 4));
         
         setCapsules(data);
       }
@@ -85,10 +82,8 @@ const Index = () => {
     }
   };
 
-  // Don't render on server-side
   if (!mounted) return null;
 
-  // Function to handle slide navigation
   const goToSlide = (index: number) => {
     if (index < 0) {
       setCurrentSlide(auctionCapsules.length - 1);
@@ -99,7 +94,6 @@ const Index = () => {
     }
   };
 
-  // Shorten address for display
   const shortenAddress = (addr: string | undefined) => {
     if (!addr) return '';
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -107,7 +101,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-space-gradient text-white overflow-x-hidden">
-      {/* Header/Nav Bar - Updated to match the profile page header */}
       <header className="container mx-auto py-6 px-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -124,12 +117,9 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
       <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-        {/* Animated Background */}
         <div className="absolute inset-0 z-0">
           <div className="stars-container absolute inset-0">
-            {/* Generate random stars */}
             {Array.from({ length: 100 }).map((_, i) => (
               <div
                 key={i}
@@ -145,11 +135,9 @@ const Index = () => {
             ))}
           </div>
           
-          {/* Glowing orb effect */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-radial from-neon-blue/20 via-neon-pink/5 to-transparent blur-3xl" />
         </div>
         
-        {/* Content */}
         <div className="container relative z-10 px-4 flex flex-col items-center text-center">
           <h1 className="text-5xl md:text-7xl font-bold mb-6 text-gradient animate-fade-in">
             🌠 UNLOCK THE FUTURE
@@ -168,16 +156,9 @@ const Index = () => {
           >
             🚀 CREATE CAPSULE
           </Button>
-          
-          {/* Scroll indicator */}
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce">
-            <p className="text-white/60 mb-2">Learn More</p>
-            <ArrowDown className="h-6 w-6 text-white/60" />
-          </div>
         </div>
       </section>
       
-      {/* How it Works Section */}
       <section className="py-24 bg-space-dark">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-16 text-gradient">
@@ -185,7 +166,6 @@ const Index = () => {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Step 1 */}
             <div className="flex flex-col items-center text-center p-8 rounded-2xl bg-space-light/10 backdrop-blur-sm border border-neon-blue/20 hover:border-neon-blue/50 transition-all">
               <div className="w-16 h-16 rounded-full bg-neon-blue/20 flex items-center justify-center mb-6">
                 <Box className="w-8 h-8 text-neon-blue" />
@@ -196,7 +176,6 @@ const Index = () => {
               </p>
             </div>
             
-            {/* Step 2 */}
             <div className="flex flex-col items-center text-center p-8 rounded-2xl bg-space-light/10 backdrop-blur-sm border border-neon-pink/20 hover:border-neon-pink/50 transition-all">
               <div className="w-16 h-16 rounded-full bg-neon-pink/20 flex items-center justify-center mb-6">
                 <Upload className="w-8 h-8 text-neon-pink" />
@@ -207,7 +186,6 @@ const Index = () => {
               </p>
             </div>
             
-            {/* Step 3 */}
             <div className="flex flex-col items-center text-center p-8 rounded-2xl bg-space-light/10 backdrop-blur-sm border border-neon-green/20 hover:border-neon-green/50 transition-all">
               <div className="w-16 h-16 rounded-full bg-neon-green/20 flex items-center justify-center mb-6">
                 <Clock className="w-8 h-8 text-neon-green" />
@@ -221,9 +199,7 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Current Auctions Section */}
       <section className="py-24 relative overflow-hidden">
-        {/* Background elements */}
         <div className="absolute inset-0 z-0">
           <div className="absolute top-1/2 left-1/4 w-[300px] h-[300px] rounded-full bg-neon-blue/10 blur-[100px]" />
           <div className="absolute top-1/3 right-1/4 w-[250px] h-[250px] rounded-full bg-neon-pink/10 blur-[100px]" />
@@ -236,7 +212,6 @@ const Index = () => {
           
           {auctionCapsules.length > 0 ? (
             <div className="relative">
-              {/* Carousel navigation */}
               <div className="flex justify-center mb-8">
                 <button
                   onClick={() => goToSlide(currentSlide - 1)}
@@ -263,7 +238,6 @@ const Index = () => {
                 </button>
               </div>
               
-              {/* Carousel content */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {auctionCapsules.map((capsule, index) => (
                   <div
@@ -335,7 +309,6 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Opening This Week */}
       <section className="py-24 bg-space-dark">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-16 text-gradient">
@@ -388,7 +361,6 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Testimonials Section */}
       <section className="py-24 relative">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-16 text-gradient">
@@ -396,7 +368,6 @@ const Index = () => {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Testimonial 1 */}
             <div className="bg-space-light/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-white/30 transition-all">
               <div className="flex items-center mb-4">
                 <Avatar className="h-10 w-10 mr-4">
@@ -417,7 +388,6 @@ const Index = () => {
               </div>
             </div>
             
-            {/* Testimonial 2 */}
             <div className="bg-space-light/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-white/30 transition-all">
               <div className="flex items-center mb-4">
                 <Avatar className="h-10 w-10 mr-4">
@@ -438,7 +408,6 @@ const Index = () => {
               </div>
             </div>
             
-            {/* Testimonial 3 */}
             <div className="bg-space-light/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-white/30 transition-all">
               <div className="flex items-center mb-4">
                 <Avatar className="h-10 w-10 mr-4">
@@ -462,7 +431,6 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Footer */}
       <footer className="py-12 bg-space-dark border-t border-white/10">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
