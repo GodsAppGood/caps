@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -95,14 +94,12 @@ const AICapsuleWidget = () => {
       // Create the capsule in Supabase
       await createCapsule({
         name: eventName,
-        open_date: selectedDate.toISOString(),
-        initial_bid: parseFloat(minimumBid),
-        message: message,
+        creator_id: user.id,
         image_url: imageUrl,
-        encryption_level: encryptionLevel,
+        message: message,
+        unlock_date: selectedDate.toISOString(),
         auction_enabled: allowBidding,
-        winner_id: undefined,
-      }, user.id);
+      });
 
       toast({
         title: "Success",
@@ -116,8 +113,6 @@ const AICapsuleWidget = () => {
       setSelectedImage(null);
       setPreviewUrl(null);
       setAllowBidding(false);
-      setMinimumBid("0.1");
-      setEncryptionLevel("standard");
       setIsOpen(false);
     } catch (error: any) {
       console.error("Error creating capsule:", error);
