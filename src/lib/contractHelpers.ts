@@ -2,6 +2,7 @@
 import { ethers } from 'ethers';
 import { create } from 'ipfs-http-client';
 import { toast } from 'sonner';
+import { Buffer } from 'buffer';
 
 // IPFS configuration
 // Using Infura IPFS public gateway
