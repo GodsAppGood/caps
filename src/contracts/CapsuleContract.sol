@@ -9,6 +9,9 @@ contract CapsuleContract {
     // Minimum bid increment percentage (10%)
     uint256 public constant MIN_BID_INCREMENT_PERCENT = 10;
 
+    // Platform fee percentage (2%)
+    uint256 public constant PLATFORM_FEE_PERCENT = 2;
+
     // Event emitted when a new capsule is created
     event CapsuleCreated(
         address indexed creator,
@@ -49,6 +52,7 @@ contract CapsuleContract {
         address highestBidder;
         bool isOpen;
         string encryptionLevel;
+        uint256 auctionEndTime; // Timestamp when the auction ends (optional)
     }
     
     // Mapping from capsule ID to Capsule data
@@ -81,7 +85,8 @@ contract CapsuleContract {
             currentBid: initialBid,
             highestBidder: address(0),
             isOpen: false,
-            encryptionLevel: encryptionLevel
+            encryptionLevel: encryptionLevel,
+            auctionEndTime: 0 // No auction end time by default
         });
         
         nextCapsuleId++;
@@ -106,6 +111,11 @@ contract CapsuleContract {
         
         // Check that capsule is not already open
         require(!capsule.isOpen, "Capsule is already open");
+        
+        // Check if auction has ended (if auctionEndTime is set)
+        if (capsule.auctionEndTime > 0) {
+            require(block.timestamp < capsule.auctionEndTime, "Auction has ended");
+        }
         
         // Check that bid is higher than current bid by at least 10%
         uint256 minimumBid = capsule.currentBid + (capsule.currentBid * MIN_BID_INCREMENT_PERCENT / 100);
@@ -146,7 +156,62 @@ contract CapsuleContract {
         capsule.isOpen = true;
         
         // Calculate platform fee (2%)
-        uint256 platformFee = capsule.currentBid * 2 / 100;
+        uint256 platformFee = capsule.currentBid * PLATFORM_FEE_PERCENT / 100;
+        uint256 creatorPayment = capsule.currentBid - platformFee;
+        
+        // Transfer funds to creator and platform
+        payable(capsule.creator).transfer(creatorPayment);
+        payable(owner).transfer(platformFee);
+        
+        // Emit event for bid acceptance
+        emit BidAccepted(
+            capsule.creator,
+            capsule.highestBidder,
+            capsuleId,
+            capsule.currentBid,
+            block.timestamp
+        );
+    }
+
+    // Function to set an auction end time (optional, only callable by capsule creator)
+    function setAuctionEndTime(uint256 capsuleId, uint256 endTime) external {
+        Capsule storage capsule = capsules[capsuleId];
+        
+        // Check that sender is the capsule creator
+        require(msg.sender == capsule.creator, "Only capsule creator can set auction end time");
+        
+        // Check that capsule is not already open
+        require(!capsule.isOpen, "Capsule is already open");
+        
+        // Check that end time is in the future
+        require(endTime > block.timestamp, "End time must be in the future");
+        
+        // Set auction end time
+        capsule.auctionEndTime = endTime;
+    }
+    
+    // Function to finalize an auction that has ended by time (callable by anyone)
+    function finalizeTimedAuction(uint256 capsuleId) external {
+        Capsule storage capsule = capsules[capsuleId];
+        
+        // Check that capsule exists
+        require(capsule.creator != address(0), "Capsule does not exist");
+        
+        // Check that capsule is not already open
+        require(!capsule.isOpen, "Capsule is already open");
+        
+        // Check that auction end time is set and has passed
+        require(capsule.auctionEndTime > 0, "No auction end time set");
+        require(block.timestamp >= capsule.auctionEndTime, "Auction has not ended yet");
+        
+        // Check that there is a valid bid
+        require(capsule.highestBidder != address(0), "No bids to finalize");
+        
+        // Mark capsule as open
+        capsule.isOpen = true;
+        
+        // Calculate platform fee (2%)
+        uint256 platformFee = capsule.currentBid * PLATFORM_FEE_PERCENT / 100;
         uint256 creatorPayment = capsule.currentBid - platformFee;
         
         // Transfer funds to creator and platform

@@ -151,7 +151,7 @@ export const placeBidOnChain = async (
     const bidAmountWei = ethers.utils.parseEther(bidAmount.toString());
 
     // Execute transaction
-    const tx = await contract.placeBid(capsuleId, { value: bidAmountWei });
+    const tx = await contract.placeBid(Number(capsuleId), { value: bidAmountWei });
 
     // Wait for transaction to be mined
     const receipt = await tx.wait();
@@ -197,7 +197,7 @@ export const acceptBidOnChain = async (
     const contract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, signer);
 
     // Execute transaction
-    const tx = await contract.acceptBid(capsuleId);
+    const tx = await contract.acceptBid(Number(capsuleId));
 
     // Wait for transaction to be mined
     const receipt = await tx.wait();

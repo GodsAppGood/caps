@@ -85,12 +85,12 @@ export const placeBid = async (capsuleId: string, bidAmount: number, bidderId: s
     throw new Error(`Bid must be at least ${(currentHighestBid * 1.1).toFixed(2)} BNB (10% higher than current bid)`);
   }
   
-  // Try to place the bid on blockchain (optional, can be enabled if contract is deployed)
-  // const blockchainSuccess = await placeBidOnChain(capsuleId, bidAmount);
+  // Place the bid on blockchain
+  const blockchainSuccess = await placeBidOnChain(capsuleId, bidAmount);
   
-  // if (!blockchainSuccess) {
-  //   throw new Error("Failed to place bid on blockchain");
-  // }
+  if (!blockchainSuccess) {
+    throw new Error("Failed to place bid on blockchain");
+  }
   
   // Update the capsule with the new bid
   const { data, error } = await supabase
@@ -155,12 +155,12 @@ export const acceptBid = async (capsuleId: string, bidId: string) => {
     throw bidError;
   }
   
-  // Try to accept the bid on blockchain (optional, can be enabled if contract is deployed)
-  // const blockchainSuccess = await acceptBidOnChain(capsuleId);
+  // Accept the bid on blockchain
+  const blockchainSuccess = await acceptBidOnChain(capsuleId);
   
-  // if (!blockchainSuccess) {
-  //   throw new Error("Failed to accept bid on blockchain");
-  // }
+  if (!blockchainSuccess) {
+    throw new Error("Failed to accept bid on blockchain");
+  }
   
   // Mark bid as accepted in the database
   const { data, error } = await supabase
@@ -184,7 +184,7 @@ export const acceptBid = async (capsuleId: string, bidId: string) => {
 };
 
 // Get all capsules
-export const getAllCapsules = async () => {
+export const getAllCapsules = async (): Promise<Capsule[]> => {
   const { data, error } = await supabase
     .from('capsules')
     .select(`
@@ -202,11 +202,15 @@ export const getAllCapsules = async () => {
     throw error;
   }
   
-  return data || [];
+  // Ensure data conforms to the Capsule type by mapping status to the expected enum
+  return (data || []).map(capsule => ({
+    ...capsule,
+    status: capsule.status === 'opened' ? 'opened' : 'closed'
+  })) as Capsule[];
 };
 
 // Get today's capsules (capsules that will open today)
-export const getTodayCapsules = async () => {
+export const getTodayCapsules = async (): Promise<Capsule[]> => {
   const today = new Date();
   const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
   const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
@@ -230,11 +234,15 @@ export const getTodayCapsules = async () => {
     throw error;
   }
   
-  return data || [];
+  // Ensure data conforms to the Capsule type by mapping status to the expected enum
+  return (data || []).map(capsule => ({
+    ...capsule,
+    status: capsule.status === 'opened' ? 'opened' : 'closed'
+  })) as Capsule[];
 };
 
 // Get capsules created by a specific user
-export const getUserCapsules = async (userId: string) => {
+export const getUserCapsules = async (userId: string): Promise<Capsule[]> => {
   const { data, error } = await supabase
     .from('capsules')
     .select(`
@@ -253,11 +261,15 @@ export const getUserCapsules = async (userId: string) => {
     throw error;
   }
   
-  return data || [];
+  // Ensure data conforms to the Capsule type by mapping status to the expected enum
+  return (data || []).map(capsule => ({
+    ...capsule,
+    status: capsule.status === 'opened' ? 'opened' : 'closed'
+  })) as Capsule[];
 };
 
 // Get a specific capsule by ID
-export const getCapsuleById = async (id: string) => {
+export const getCapsuleById = async (id: string): Promise<Capsule> => {
   const { data, error } = await supabase
     .from('capsules')
     .select(`
@@ -276,7 +288,11 @@ export const getCapsuleById = async (id: string) => {
     throw error;
   }
   
-  return data;
+  // Ensure data conforms to the Capsule type by mapping status to the expected enum
+  return {
+    ...data,
+    status: data.status === 'opened' ? 'opened' : 'closed'
+  } as Capsule;
 };
 
 // Get all bids for a specific capsule
