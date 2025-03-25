@@ -352,7 +352,7 @@ const Index = () => {
                   <CardHeader>
                     <CardTitle className="text-neon-green">{capsule.name}</CardTitle>
                     <CardDescription className="text-white/60">
-                      By {capsule.creator_username || "Anonymous"}
+                      By {capsule.creator?.username || "Anonymous"}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
