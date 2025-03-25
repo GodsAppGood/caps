@@ -10,7 +10,6 @@ import { CalendarIcon, Image, MessageSquare, Clock, Check, Coins } from "lucide-
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -251,24 +250,37 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
           </div>
 
           <div className="space-y-4 pt-4 border-t border-neon-blue/20">
-            <div className="space-y-1">
+            <div className="space-y-2">
               <Label className="text-sm text-neon-blue font-medium">PAYMENT METHOD</Label>
-              <div className="space-y-5">
-                <div className="flex justify-between text-white">
-                  <span className={`font-medium ${paymentMethod === 0 ? "text-neon-blue" : "text-white/70"}`}>0.01 BNB</span>
-                  <span className={`font-medium ${paymentMethod === 1 ? "text-neon-blue" : "text-white/70"}`}>0.005 ETH</span>
-                </div>
-                <Slider 
-                  value={[paymentMethod]} 
-                  onValueChange={(value) => setPaymentMethod(value[0])}
-                  max={1}
-                  step={1}
-                  className="cursor-pointer"
-                />
-                <div className="flex items-center gap-2 text-white/70">
-                  <Coins className="w-4 h-4 text-neon-blue" />
-                  <span className="text-xs">Choose your preferred payment method for creating this capsule</span>
-                </div>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  onClick={() => setPaymentMethod(0)}
+                  className={`flex-1 flex justify-between items-center ${
+                    paymentMethod === 0 
+                      ? "bg-gradient-to-r from-neon-blue to-neon-blue/70 text-white" 
+                      : "bg-space-light/20 text-white/70 hover:bg-space-light/30"
+                  }`}
+                >
+                  <span>BNB</span>
+                  <span className="font-medium">0.01 BNB</span>
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setPaymentMethod(1)}
+                  className={`flex-1 flex justify-between items-center ${
+                    paymentMethod === 1 
+                      ? "bg-gradient-to-r from-neon-pink to-neon-pink/70 text-white" 
+                      : "bg-space-light/20 text-white/70 hover:bg-space-light/30"
+                  }`}
+                >
+                  <span>ETH</span>
+                  <span className="font-medium">0.005 ETH</span>
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 text-white/70">
+                <Coins className="w-4 h-4 text-neon-blue" />
+                <span className="text-xs">Choose your preferred payment method for creating this capsule</span>
               </div>
             </div>
 
