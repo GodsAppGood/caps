@@ -13,29 +13,31 @@ import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <>
-    <QueryClientProvider client={queryClient}>
+const App = () => {
+  return (
+    <>
       <WagmiConfig config={wagmiConfig}>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/profile" element={<UserProfile />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/profile" element={<UserProfile />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </AuthProvider>
+        </QueryClientProvider>
       </WagmiConfig>
-    </QueryClientProvider>
-    
-    {/* Web3Modal нужно размещать вне основного компонента */}
-    <Web3ModalComponent />
-  </>
-);
+      
+      {/* Web3Modal needs to be outside WagmiConfig but still in the React tree */}
+      <Web3ModalComponent />
+    </>
+  );
+};
 
 export default App;
