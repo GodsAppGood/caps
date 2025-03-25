@@ -202,10 +202,15 @@ export const getAllCapsules = async (): Promise<Capsule[]> => {
     throw error;
   }
   
-  // Ensure data conforms to the Capsule type by mapping status to the expected enum
+  // We need to properly handle the creator relationship and ensure the status is properly typed
   return (data || []).map(capsule => ({
     ...capsule,
-    status: capsule.status === 'opened' ? 'opened' : 'closed'
+    status: capsule.status === 'opened' ? 'opened' : 'closed',
+    creator: capsule.creator && typeof capsule.creator === 'object' ? {
+      id: capsule.creator.id,
+      username: capsule.creator.username,
+      avatar_url: capsule.creator.avatar_url
+    } : undefined
   })) as Capsule[];
 };
 
@@ -237,7 +242,12 @@ export const getTodayCapsules = async (): Promise<Capsule[]> => {
   // Ensure data conforms to the Capsule type by mapping status to the expected enum
   return (data || []).map(capsule => ({
     ...capsule,
-    status: capsule.status === 'opened' ? 'opened' : 'closed'
+    status: capsule.status === 'opened' ? 'opened' : 'closed',
+    creator: capsule.creator && typeof capsule.creator === 'object' ? {
+      id: capsule.creator.id,
+      username: capsule.creator.username,
+      avatar_url: capsule.creator.avatar_url
+    } : undefined
   })) as Capsule[];
 };
 
@@ -264,7 +274,12 @@ export const getUserCapsules = async (userId: string): Promise<Capsule[]> => {
   // Ensure data conforms to the Capsule type by mapping status to the expected enum
   return (data || []).map(capsule => ({
     ...capsule,
-    status: capsule.status === 'opened' ? 'opened' : 'closed'
+    status: capsule.status === 'opened' ? 'opened' : 'closed',
+    creator: capsule.creator && typeof capsule.creator === 'object' ? {
+      id: capsule.creator.id,
+      username: capsule.creator.username,
+      avatar_url: capsule.creator.avatar_url
+    } : undefined
   })) as Capsule[];
 };
 
@@ -291,7 +306,12 @@ export const getCapsuleById = async (id: string): Promise<Capsule> => {
   // Ensure data conforms to the Capsule type by mapping status to the expected enum
   return {
     ...data,
-    status: data.status === 'opened' ? 'opened' : 'closed'
+    status: data.status === 'opened' ? 'opened' : 'closed',
+    creator: data.creator && typeof data.creator === 'object' ? {
+      id: data.creator.id,
+      username: data.creator.username,
+      avatar_url: data.creator.avatar_url
+    } : undefined
   } as Capsule;
 };
 

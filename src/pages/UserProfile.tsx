@@ -95,8 +95,8 @@ const UserProfile = () => {
         throw new Error("Bid request not found");
       }
       
-      // Accept the bid in the database
-      await acceptBid(acceptBidCapsule, bidRequest.id);
+      // Accept the bid in the database - convert to string if number
+      await acceptBid(String(acceptBidCapsule), bidRequest.id);
       
       toast({
         title: "Bid Accepted",
@@ -185,8 +185,8 @@ const UserProfile = () => {
         return;
       }
       
-      // Place the bid
-      await placeBid(selectedCapsule, bidAmount, user.id);
+      // Place the bid - convert to string if number
+      await placeBid(String(selectedCapsule), bidAmount, user.id);
       
       toast({
         title: "Bid Placed",
