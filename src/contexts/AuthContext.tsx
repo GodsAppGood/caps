@@ -3,12 +3,23 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
+import { useAccount } from 'wagmi';
+
+type UserProfile = {
+  id: string;
+  username?: string;
+  avatar_url?: string;
+  twitter_username?: string;
+  wallet_address?: string;
+}
 
 type AuthContextType = {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  userProfile: UserProfile | null;
   signOut: () => Promise<void>;
+  refreshUserProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,7 +28,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { toast } = useToast();
+  const { address } = useAccount();
+
+  // Fetch user profile data
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (error) throw error;
+      
+      if (data) {
+        setUserProfile(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
+  // Refresh user profile data
+  const refreshUserProfile = async () => {
+    if (user?.id) {
+      await fetchUserProfile(user.id);
+    }
+  };
+
+  // Update wallet address if needed
+  useEffect(() => {
+    const updateWalletAddress = async () => {
+      if (user && address && userProfile && userProfile.wallet_address !== address) {
+        try {
+          const { error } = await supabase
+            .from('profiles')
+            .update({ wallet_address: address })
+            .eq('id', user.id);
+          
+          if (error) throw error;
+          
+          // Refresh user profile
+          await refreshUserProfile();
+        } catch (error) {
+          console.error('Error updating wallet address:', error);
+        }
+      }
+    };
+    
+    updateWalletAddress();
+  }, [user, address, userProfile]);
 
   useEffect(() => {
     // First, set up the auth state listener
@@ -25,6 +87,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          fetchUserProfile(session.user.id);
+        } else {
+          setUserProfile(null);
+        }
+        
         setIsLoading(false);
       }
     );
@@ -33,6 +102,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      }
+      
       setIsLoading(false);
     });
 
@@ -65,7 +139,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     session,
     isLoading,
+    userProfile,
     signOut,
+    refreshUserProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

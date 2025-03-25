@@ -4,12 +4,24 @@ import { Package } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { WalletConnect } from "@/components/WalletConnect";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAccount } from "wagmi";
 
 const Header = () => {
   const navigate = useNavigate();
+  const { userProfile } = useAuth();
+  const { address } = useAccount();
   
   const handleProfileClick = () => {
     navigate("/profile");
+  };
+
+  // Get initials for avatar fallback
+  const getAvatarText = () => {
+    if (address) {
+      return `${address.slice(0, 2)}`;
+    }
+    return "UN";
   };
   
   return (
@@ -26,7 +38,7 @@ const Header = () => {
             className="w-10 h-10 border-2 border-neon-blue transition-all hover:scale-105 cursor-pointer" 
             onClick={handleProfileClick}
           >
-            <AvatarFallback className="bg-space-dark text-neon-blue">UN</AvatarFallback>
+            <AvatarFallback className="bg-space-dark text-neon-blue">{getAvatarText()}</AvatarFallback>
           </Avatar>
         </div>
       </div>

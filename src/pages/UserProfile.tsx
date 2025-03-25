@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { WalletConnect } from "@/components/WalletConnect";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAccount } from "wagmi";
 import { getUserCapsules, getCapsuleBids, placeBid, acceptBid } from "@/services/capsuleService";
 
 const UserProfile = () => {
@@ -18,8 +19,10 @@ const UserProfile = () => {
   const [userCapsules, setUserCapsules] = useState<any[]>([]);
   const [bidRequests, setBidRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
   const { toast } = useToast();
-  const { user, signOut } = useAuth();
+  const { user, signOut, userProfile } = useAuth();
+  const { address } = useAccount();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -235,6 +238,20 @@ const UserProfile = () => {
     }
   };
 
+  // Get avatar text from wallet address
+  const getAvatarText = () => {
+    if (address) {
+      return `${address.slice(0, 2).toUpperCase()}`;
+    }
+    return "UN";
+  };
+
+  // Format wallet address for display
+  const formatWalletAddress = () => {
+    if (!address) return "No wallet connected";
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
   return (
     <div className="min-h-screen bg-space-gradient text-white">
       <div className="container mx-auto py-8">
@@ -247,7 +264,7 @@ const UserProfile = () => {
           <div className="flex items-center gap-4">
             <WalletConnect />
             <Avatar className="w-10 h-10 border-2 border-neon-blue">
-              <AvatarFallback className="bg-space-dark text-neon-blue">UN</AvatarFallback>
+              <AvatarFallback className="bg-space-dark text-neon-blue">{getAvatarText()}</AvatarFallback>
             </Avatar>
           </div>
         </div>
@@ -256,11 +273,11 @@ const UserProfile = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-12 p-6 rounded-2xl bg-space-dark/50 border border-neon-blue/20 backdrop-blur-md">
           <div className="flex items-center gap-6">
             <Avatar className="w-20 h-20 border-3 border-neon-blue">
-              <AvatarFallback className="bg-space-dark text-neon-blue text-2xl">UN</AvatarFallback>
+              <AvatarFallback className="bg-space-dark text-neon-blue text-2xl">{getAvatarText()}</AvatarFallback>
             </Avatar>
             <div className="text-left">
-              <h1 className="text-2xl font-bold">COSMIC USER</h1>
-              <p className="text-neon-blue">@cosmic_user</p>
+              <h1 className="text-2xl font-bold">WALLET USER</h1>
+              <p className="text-neon-blue">{formatWalletAddress()}</p>
               <div className="mt-2 flex items-center gap-4">
                 <span className="flex items-center gap-1">
                   <Timer className="w-4 h-4 text-neon-pink" />
@@ -282,7 +299,11 @@ const UserProfile = () => {
               <Settings className="w-4 h-4 mr-2" />
               SETTINGS
             </Button>
-            <Button variant="outline" className="border-neon-pink/30 hover:border-neon-pink text-neon-pink bg-transparent">
+            <Button 
+              variant="outline" 
+              className="border-neon-pink/30 hover:border-neon-pink text-neon-pink bg-transparent"
+              onClick={handleSignOut}
+            >
               <LogOut className="w-4 h-4 mr-2" />
               SIGN OUT
             </Button>

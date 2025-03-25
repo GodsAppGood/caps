@@ -142,6 +142,7 @@ export type Database = {
           twitter_username: string | null
           updated_at: string
           username: string | null
+          wallet_address: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -151,6 +152,7 @@ export type Database = {
           twitter_username?: string | null
           updated_at?: string
           username?: string | null
+          wallet_address?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -160,6 +162,7 @@ export type Database = {
           twitter_username?: string | null
           updated_at?: string
           username?: string | null
+          wallet_address?: string | null
         }
         Relationships: []
       }
@@ -168,7 +171,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_wallet_address: {
+        Args: {
+          wallet_address: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
