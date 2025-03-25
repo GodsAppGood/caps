@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAccount } from "wagmi";
-import { queryPublicTimecapsules } from "@/services/capsuleService";
+import { getAllCapsules, Capsule } from "@/services/capsuleService";
 import { 
   ArrowRight, 
   Box, 
@@ -46,11 +46,11 @@ const Index = () => {
   const { isConnected, address } = useAccount();
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
-  const [capsules, setCapsules] = useState<any[]>([]);
+  const [capsules, setCapsules] = useState<Capsule[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [auctionCapsules, setAuctionCapsules] = useState<any[]>([]);
-  const [upcomingCapsules, setUpcomingCapsules] = useState<any[]>([]);
+  const [auctionCapsules, setAuctionCapsules] = useState<Capsule[]>([]);
+  const [upcomingCapsules, setUpcomingCapsules] = useState<Capsule[]>([]);
 
   useEffect(() => {
     setMounted(true);
@@ -59,10 +59,10 @@ const Index = () => {
 
   const fetchCapsules = async () => {
     try {
-      const data = await queryPublicTimecapsules();
+      const data = await getAllCapsules();
       if (data && data.length) {
         // Filter for auction capsules (those with bidding enabled)
-        const auctionEnabled = data.filter(capsule => capsule.bid_enabled);
+        const auctionEnabled = data.filter(capsule => capsule.current_bid !== undefined);
         setAuctionCapsules(auctionEnabled.slice(0, 6)); // Show max 6 capsules
         
         // Filter for upcoming capsules (those opening within 7 days)
