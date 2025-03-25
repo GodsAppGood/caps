@@ -50,7 +50,7 @@ const UserProfile = () => {
             // Group bids by capsule and only get the highest bid per bidder
             const uniqueBidders = new Map();
             bids.forEach(bid => {
-              if (!uniqueBidders.has(bid.bidder_id) || bid.amount > uniqueBidders.get(bid.bidder_id).amount) {
+              if (!uniqueBidders.has(bid.bidder_id) || bid.bid_amount > uniqueBidders.get(bid.bidder_id).bid_amount) {
                 uniqueBidders.set(bid.bidder_id, bid);
               }
             });
@@ -63,7 +63,7 @@ const UserProfile = () => {
                 capsuleName: capsule.name,
                 bidder: bid.bidder?.username || "ANONYMOUS",
                 bidderWallet: `0x${bid.bidder_id.slice(0, 4)}...${bid.bidder_id.slice(-4)}`,
-                amount: bid.amount,
+                amount: bid.bid_amount,
                 timestamp: new Date(bid.created_at).toLocaleDateString()
               });
             });
@@ -576,4 +576,3 @@ const UserProfile = () => {
 };
 
 export default UserProfile;
-

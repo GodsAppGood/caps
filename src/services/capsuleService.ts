@@ -142,7 +142,11 @@ export const getAllCapsules = async (): Promise<Capsule[]> => {
       throw error;
     }
 
-    return data || [];
+    // Cast the data to ensure it matches our Capsule type
+    return (data || []).map(capsule => ({
+      ...capsule,
+      status: capsule.status as 'open' | 'closed'
+    })) as Capsule[];
   } catch (error) {
     console.error("Unexpected error in getAllCapsules:", error);
     throw error;
@@ -168,7 +172,11 @@ export const getUserCapsules = async (userId: string): Promise<Capsule[]> => {
       throw error;
     }
 
-    return data || [];
+    // Cast the data to ensure it matches our Capsule type
+    return (data || []).map(capsule => ({
+      ...capsule,
+      status: capsule.status as 'open' | 'closed'
+    })) as Capsule[];
   } catch (error) {
     console.error("Unexpected error in getUserCapsules:", error);
     throw error;
@@ -194,7 +202,11 @@ export const getCapsuleBids = async (capsuleId: string): Promise<CapsuleBid[]> =
       throw error;
     }
 
-    return data || [];
+    // Transform the data to match our CapsuleBid type
+    return (data || []).map(bid => ({
+      ...bid,
+      bidder: bid.bidder as CapsuleBid['bidder']
+    })) as CapsuleBid[];
   } catch (error) {
     console.error("Unexpected error in getCapsuleBids:", error);
     throw error;

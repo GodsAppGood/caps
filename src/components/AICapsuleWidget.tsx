@@ -97,7 +97,7 @@ const AICapsuleWidget = () => {
         creator_id: user.id,
         image_url: imageUrl,
         message: message,
-        unlock_date: selectedDate.toISOString(),
+        open_date: selectedDate.toISOString(),
         auction_enabled: allowBidding,
       });
 
@@ -407,3 +407,4 @@ const AICapsuleWidget = () => {
 };
 
 export default AICapsuleWidget;
+
