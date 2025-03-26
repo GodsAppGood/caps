@@ -1,7 +1,13 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/auth';
-import { ToastOptions } from '@/hooks/use-toast';
+
+// Define ToastOptions type based on how it's used
+type ToastOptions = {
+  title: string;
+  description: string;
+  variant?: "default" | "destructive";
+};
 
 // Fetch user profile data
 export const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
