@@ -5,7 +5,6 @@ import { CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAccount } from "wagmi";
 import { checkWalletConnection, switchToBscNetwork, openWalletModal } from "@/utils/walletUtils";
-import { handleCapsuleCreationTransaction } from "@/utils/transactionUtils";
 import { ethers } from "ethers";
 
 interface CreateCapsuleButtonProps {
@@ -82,6 +81,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
         // Get the provider and signer
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const signer = provider.getSigner();
+        const userAddress = await signer.getAddress();
+        console.log("Sending from address:", userAddress);
         
         // Create transaction
         const tx = {
@@ -92,7 +93,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
         
         console.log("Sending transaction:", tx);
         
-        // Send transaction directly
+        // Request wallet to send transaction
         const transaction = await signer.sendTransaction(tx);
         console.log("Transaction sent:", transaction.hash);
         

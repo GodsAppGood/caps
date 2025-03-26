@@ -18,7 +18,7 @@ export const checkWalletConnection = async (): Promise<boolean> => {
   }
 
   try {
-    // Request account access
+    // Request account access - this will prompt the wallet UI if not already connected
     console.log("Requesting account access");
     await window.ethereum.request({ method: "eth_requestAccounts" });
     console.log("Account access granted");
@@ -96,7 +96,7 @@ export const switchToBscNetwork = async (): Promise<boolean> => {
         console.error("Error switching to BSC network:", switchError);
         toast({
           title: "Network Error",
-          description: "Please switch to Binance Smart Chain network",
+          description: "Please switch to Binance Smart Chain network manually",
           variant: "destructive",
         });
         return false;
@@ -117,6 +117,7 @@ export const switchToBscNetwork = async (): Promise<boolean> => {
  * Opens wallet connection modal
  */
 export const openWalletModal = () => {
+  // Dispatch event to open Web3Modal
   const w3mEvent = new Event('w3m-open-modal');
   document.dispatchEvent(w3mEvent);
   console.log("Wallet connection modal opened");
