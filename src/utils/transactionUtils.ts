@@ -5,7 +5,7 @@ import { toast } from "@/hooks/use-toast";
 /**
  * Sends a payment transaction
  * @param recipientAddress Address to send the payment to
- * @param amount Amount to send in BNB
+ * @param amount Amount to send in BNB or ETH
  * @returns Transaction receipt if successful, null otherwise
  */
 export const sendPaymentTransaction = async (
@@ -19,6 +19,10 @@ export const sendPaymentTransaction = async (
     const userAddress = await signer.getAddress();
     console.log("Sending payment from address:", userAddress);
 
+    // Check network to determine currency
+    const network = await provider.getNetwork();
+    const currency = network.chainId === 56 || network.chainId === 97 ? "BNB" : "ETH";
+
     // Create transaction
     const tx = {
       to: recipientAddress,
@@ -26,7 +30,7 @@ export const sendPaymentTransaction = async (
       gasLimit: ethers.utils.hexlify(100000), // Increased gas limit for transfers
     };
 
-    console.log("Preparing transaction:", tx);
+    console.log(`Preparing transaction of ${amount} ${currency}:`, tx);
     
     // Send transaction
     const transaction = await signer.sendTransaction(tx);
@@ -34,7 +38,7 @@ export const sendPaymentTransaction = async (
     
     toast({
       title: "Transaction Sent",
-      description: "Waiting for transaction confirmation...",
+      description: `Your payment of ${amount} ${currency} is being processed...`,
     });
     
     // Wait for confirmation
@@ -44,7 +48,7 @@ export const sendPaymentTransaction = async (
     if (receipt.status === 1) {
       toast({
         title: "Payment Successful",
-        description: `Your payment of ${amount} BNB has been processed`,
+        description: `Your payment of ${amount} ${currency} has been processed`,
       });
       return receipt;
     } else {
@@ -69,7 +73,7 @@ export const sendPaymentTransaction = async (
 /**
  * Handles the capsule creation transaction process
  * @param recipientAddress Address to send the payment to
- * @param amount Amount to send in BNB
+ * @param amount Amount to send in BNB or ETH
  * @param onSuccess Callback function to execute on successful payment
  * @returns boolean indicating success or failure
  */

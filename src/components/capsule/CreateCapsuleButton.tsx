@@ -11,17 +11,19 @@ interface CreateCapsuleButtonProps {
   isLoading: boolean;
   onClick: () => void;
   paymentAmount: string;
+  paymentMethod: number; // 0 = BNB, 1 = ETH
 }
 
+// Recipient address for the payment
 const RECIPIENT_ADDRESS = "0x0AbD5b7B6DE3ceA8702dAB2827D31CDA46c6e750";
 
-const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsuleButtonProps) => {
+const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod }: CreateCapsuleButtonProps) => {
   const { toast } = useToast();
   const { address, isConnected } = useAccount();
   const [processingPayment, setProcessingPayment] = useState(false);
 
   const handlePayment = async () => {
-    console.log("Payment button clicked");
+    console.log("Payment button clicked with method:", paymentMethod === 0 ? "BNB" : "ETH");
     setProcessingPayment(true);
     
     try {
@@ -47,25 +49,32 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
         return;
       }
       
-      // Check and switch to BSC network if needed
-      const isNetworkReady = await switchToBscNetwork();
-      if (!isNetworkReady) {
-        setProcessingPayment(false);
-        return;
+      // Determine payment amount based on selected method
+      const amount = paymentMethod === 0 ? "0.01" : "0.005";
+      const currency = paymentMethod === 0 ? "BNB" : "ETH";
+      
+      // For BNB, we need to switch to BSC network
+      if (paymentMethod === 0) {
+        // Check and switch to BSC network if needed
+        const isNetworkReady = await switchToBscNetwork();
+        if (!isNetworkReady) {
+          setProcessingPayment(false);
+          return;
+        }
       }
 
-      console.log("Proceeding with transaction to address:", RECIPIENT_ADDRESS);
+      console.log(`Proceeding with ${currency} transaction (${amount} ${currency}) to address:`, RECIPIENT_ADDRESS);
       
       // Process payment and create capsule on success
-      const success = await handleCapsuleCreationTransaction(RECIPIENT_ADDRESS, "0.01", onClick);
+      const success = await handleCapsuleCreationTransaction(RECIPIENT_ADDRESS, amount, onClick);
       
       if (success) {
         toast({
           title: "Payment Successful",
-          description: "Your capsule is being created",
+          description: `Your payment of ${amount} ${currency} was successful. Your capsule is being created.`,
         });
       } else {
-        throw new Error("Transaction was not completed successfully");
+        throw new Error(`Transaction was not completed successfully. Please try again.`);
       }
       
     } catch (error: any) {
