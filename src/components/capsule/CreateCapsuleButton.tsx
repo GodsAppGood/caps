@@ -9,7 +9,7 @@ import { ethers } from "ethers";
 
 interface CreateCapsuleButtonProps {
   isLoading: boolean;
-  onClick: () => void;
+  onClick: (success: boolean, txHash?: string) => void;
   paymentAmount: string;
   paymentMethod: number; // 0 = BNB, 1 = ETH
 }
@@ -137,7 +137,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
           });
           
           // Call the onClick callback to continue with capsule creation
-          onClick();
+          onClick(true, transaction.hash);
           return true;
         } else {
           throw new Error(`Transaction was not successful. Status: ${receipt.status}`);
@@ -153,6 +153,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
         description: error.message || "An error occurred processing the payment",
         variant: "destructive",
       });
+      onClick(false);
       return false;
     } finally {
       setProcessingPayment(false);

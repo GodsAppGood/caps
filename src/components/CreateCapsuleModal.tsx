@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -65,14 +66,14 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
     return paymentMethod === 0 ? "0.01 BNB" : "0.005 ETH";
   };
 
-  const handleCreateCapsule = async () => {
+  const validateCapsuleData = () => {
     if (!userProfile) {
       toast({
         title: "Error",
         description: "You must be logged in to create a time capsule",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     if (!isConnected) {
@@ -81,7 +82,7 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
         description: "Please connect your wallet to pay for the capsule creation",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     if (!capsuleName) {
@@ -90,7 +91,7 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
         description: "Please enter a name for your time capsule",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     if (!selectedDate) {
@@ -99,43 +100,24 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
         description: "Please select an unlock date for your time capsule",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
+    return true;
+  };
+
+  const handlePaymentComplete = async (success: boolean, txHash?: string) => {
+    console.log("Payment completed with success:", success, "Transaction hash:", txHash);
+    
+    if (!success) {
+      setIsLoading(false);
+      return;
+    }
+    
     try {
-      setIsLoading(true);
+      // Create the capsule in the database after successful payment
+      await createCapsuleInDatabase(txHash);
       
-      let imageUrl: string | null = null;
-      if (selectedImage) {
-        const fileExt = selectedImage.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `public/${fileName}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('capsule_images')
-          .upload(filePath, selectedImage);
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        imageUrl = supabase.storage.from('capsule_images').getPublicUrl(filePath).data.publicUrl;
-      }
-      
-      const content = message || "Empty time capsule";
-      
-      const capsuleData = {
-        name: capsuleName,
-        creator_id: userProfile.id,
-        image_url: imageUrl,
-        message: message,
-        open_date: selectedDate.toISOString(),
-        auction_enabled: auctionEnabled,
-        status: 'closed' as 'closed'
-      };
-      
-      await createCapsule(capsuleData);
-
       toast({
         title: "Success",
         description: "Your time capsule has been created successfully.",
@@ -153,6 +135,49 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const createCapsuleInDatabase = async (txHash?: string) => {
+    let imageUrl: string | null = null;
+    if (selectedImage) {
+      const fileExt = selectedImage.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `public/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('capsule_images')
+        .upload(filePath, selectedImage);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      imageUrl = supabase.storage.from('capsule_images').getPublicUrl(filePath).data.publicUrl;
+    }
+    
+    const content = message || "Empty time capsule";
+    
+    const capsuleData = {
+      name: capsuleName,
+      creator_id: userProfile.id,
+      image_url: imageUrl,
+      message: message,
+      open_date: selectedDate.toISOString(),
+      auction_enabled: auctionEnabled,
+      status: 'closed' as 'closed',
+      tx_hash: txHash
+    };
+    
+    return await createCapsule(capsuleData);
+  };
+
+  const handleCreateCapsule = async () => {
+    if (!validateCapsuleData()) {
+      return;
+    }
+
+    setIsLoading(true);
+    // Payment and capsule creation will happen in the CreateCapsuleButton component
   };
 
   return (
@@ -182,7 +207,7 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
 
         <CreateCapsuleButton 
           isLoading={isLoading} 
-          onClick={handleCreateCapsule} 
+          onClick={handlePaymentComplete} 
           paymentAmount={getPaymentAmountDisplay()}
           paymentMethod={paymentMethod}
         />

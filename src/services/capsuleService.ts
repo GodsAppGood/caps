@@ -18,6 +18,7 @@ export type Capsule = {
     username?: string;
   };
   unlock_date?: string;
+  tx_hash?: string;
 };
 
 export type CapsuleBid = {
@@ -42,6 +43,7 @@ export type CapsuleCreate = {
   status?: 'open' | 'closed';
   current_bid?: number;
   highest_bidder_id?: string | null;
+  tx_hash?: string;
 };
 
 export const createCapsule = async (capsuleData: CapsuleCreate) => {
@@ -56,10 +58,11 @@ export const createCapsule = async (capsuleData: CapsuleCreate) => {
         open_date: capsuleData.open_date || capsuleData.unlock_date,
         auction_enabled: capsuleData.auction_enabled,
         created_at: new Date().toISOString(),
-        status: 'open',
+        status: capsuleData.status || 'closed',
         current_bid: 0,
         initial_bid: 0.1,
-        highest_bidder_id: null
+        highest_bidder_id: null,
+        tx_hash: capsuleData.tx_hash
       })
       .select()
       .single();
