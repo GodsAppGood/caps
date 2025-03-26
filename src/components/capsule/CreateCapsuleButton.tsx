@@ -21,8 +21,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
       // Check if MetaMask is installed
       if (typeof window.ethereum === "undefined") {
         toast({
-          title: "Кошелек не найден",
-          description: "Пожалуйста, установите MetaMask или другой Ethereum кошелек",
+          title: "Wallet not found",
+          description: "Please install MetaMask or another Ethereum wallet",
           variant: "destructive",
         });
         return;
@@ -66,8 +66,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
             } catch (addError) {
               console.error("Error adding BSC network:", addError);
               toast({
-                title: "Ошибка сети",
-                description: "Не удалось добавить сеть BSC в ваш кошелек",
+                title: "Network Error",
+                description: "Could not add BSC network to your wallet",
                 variant: "destructive",
               });
               return;
@@ -75,8 +75,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
           } else {
             console.error("Error switching to BSC network:", switchError);
             toast({
-              title: "Ошибка сети",
-              description: "Пожалуйста, переключитесь на сеть Binance Smart Chain",
+              title: "Network Error",
+              description: "Please switch to Binance Smart Chain network",
               variant: "destructive",
             });
             return;
@@ -106,8 +106,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
       
       // Show pending toast
       toast({
-        title: "Транзакция отправлена",
-        description: "Ожидание подтверждения транзакции...",
+        title: "Transaction Sent",
+        description: "Waiting for transaction confirmation...",
       });
       
       // Wait for transaction to be mined
@@ -117,23 +117,23 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
       // If transaction was successful, proceed with onClick (create capsule)
       if (receipt.status === 1) {
         toast({
-          title: "Платеж успешен",
-          description: "Ваш платеж в размере 0.01 BNB был успешно обработан",
+          title: "Payment Successful",
+          description: "Your payment of 0.01 BNB has been processed successfully",
         });
         console.log("Payment successful, creating capsule...");
         onClick();
       } else {
         toast({
-          title: "Платеж не удался",
-          description: "Транзакция не была успешной",
+          title: "Payment Failed",
+          description: "Transaction was not successful",
           variant: "destructive",
         });
       }
     } catch (error: any) {
       console.error("Payment error:", error);
       toast({
-        title: "Платеж не удался",
-        description: error.message || "Произошла ошибка при обработке вашего платежа",
+        title: "Payment Failed",
+        description: error.message || "There was an error processing your payment",
         variant: "destructive",
       });
     }
@@ -147,11 +147,11 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
     >
       {isLoading ? (
         <span className="flex items-center">
-          <span className="animate-spin mr-2">⟳</span> ОБРАБОТКА ПЛАТЕЖА...
+          <span className="animate-spin mr-2">⟳</span> PROCESSING PAYMENT...
         </span>
       ) : (
         <span className="flex items-center">
-          <CreditCard className="mr-2 h-5 w-5" /> ОПЛАТИТЬ 0.01 BNB И СОЗДАТЬ КАПСУЛУ
+          <CreditCard className="mr-2 h-5 w-5" /> PAY 0.01 BNB & CREATE CAPSULE
         </span>
       )}
     </Button>
