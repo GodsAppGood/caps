@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Check, CreditCard } from "lucide-react";
 import { ethers } from "ethers";
 import { useToast } from "@/hooks/use-toast";
+import { useAccount } from "wagmi";
 
 interface CreateCapsuleButtonProps {
   isLoading: boolean;
@@ -15,10 +16,29 @@ const RECIPIENT_ADDRESS = "0x0AbD5b7B6DE3ceA8702dAB2827D31CDA46c6e750";
 
 const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsuleButtonProps) => {
   const { toast } = useToast();
+  const { address, isConnected } = useAccount();
 
   const handlePayment = async () => {
     console.log("Payment button clicked");
     try {
+      // Check if wallet is connected
+      if (!isConnected || !address) {
+        console.log("Wallet not connected");
+        toast({
+          title: "Wallet not connected",
+          description: "Please connect your wallet first to proceed with payment",
+          variant: "destructive",
+        });
+        
+        // Trigger wallet connection via Web3Modal
+        const w3mEvent = new Event('w3m-open-modal');
+        document.dispatchEvent(w3mEvent);
+        return;
+      }
+
+      // Create a Web3Provider instance
+      console.log("Creating Web3Provider instance");
+      
       // Check if MetaMask is installed
       if (typeof window.ethereum === "undefined") {
         console.log("MetaMask not detected");
@@ -29,24 +49,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
         });
         return;
       }
-
-      console.log("Requesting account access from wallet");
-      try {
-        // Request access to the user's accounts
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        console.log("Account access granted");
-      } catch (error) {
-        console.error("Error requesting accounts:", error);
-        toast({
-          title: "Wallet access denied",
-          description: "Please allow access to your wallet to proceed with payment",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Create a Web3Provider instance
-      console.log("Creating Web3Provider instance");
+      
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       
       // Check if user is on BSC network
@@ -108,6 +111,21 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
         }
       }
 
+      // Request account access if needed (ensure we have permission)
+      console.log("Requesting account access from wallet");
+      try {
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        console.log("Account access granted");
+      } catch (error) {
+        console.error("Error requesting accounts:", error);
+        toast({
+          title: "Wallet access denied",
+          description: "Please allow access to your wallet to proceed with payment",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Get the signer after potentially switching networks
       console.log("Getting updated provider after network switch");
       const updatedProvider = new ethers.providers.Web3Provider(window.ethereum);
@@ -158,11 +176,11 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
             variant: "destructive",
           });
         }
-      } catch (txError) {
+      } catch (txError: any) {
         console.error("Transaction error:", txError);
         toast({
           title: "Transaction Error",
-          description: "There was an error processing your transaction",
+          description: txError.message || "There was an error processing your transaction",
           variant: "destructive",
         });
       }
@@ -189,7 +207,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
         </span>
       ) : (
         <span className="flex items-center">
-          <CreditCard className="mr-2 h-5 w-5" /> PAY 0.01 BNB & CREATE CAPSULE
+          <CreditCard className="mr-2 h-5 w-5" /> PAY {paymentAmount} & CREATE CAPSULE
         </span>
       )}
     </Button>
