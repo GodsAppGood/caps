@@ -12,7 +12,7 @@ export const WalletConnect = () => {
   const { connect, connectors } = useConnect();
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, signOut, refreshUserProfile } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -31,29 +31,50 @@ export const WalletConnect = () => {
             .maybeSingle();
 
           if (!existingUser) {
-            // Create new user with wallet address
-            const { data, error } = await supabase.auth.signUp({
-              email: `${address.toLowerCase()}@wallet.auth`,
-              password: crypto.randomUUID(),
-              options: {
-                data: {
-                  wallet_address: address,
+            // If no user with this wallet, check if this is an existing user
+            if (user) {
+              // Update existing user's profile with wallet address
+              const { error } = await supabase
+                .from('profiles')
+                .update({ wallet_address: address })
+                .eq('id', user.id);
+              
+              if (error) throw error;
+              
+              await refreshUserProfile();
+              
+              toast({
+                title: 'Wallet connected',
+                description: 'Your wallet has been connected to your account',
+              });
+            } else {
+              // Create new user with wallet address
+              const { data, error } = await supabase.auth.signUp({
+                email: `${address.toLowerCase()}@wallet.auth`,
+                password: crypto.randomUUID(),
+                options: {
+                  data: {
+                    wallet_address: address,
+                  }
                 }
-              }
-            });
-            
-            if (error) throw error;
-            
-            toast({
-              title: 'Wallet connected',
-              description: 'Your wallet has been connected and a new account created',
-            });
+              });
+              
+              if (error) throw error;
+              
+              toast({
+                title: 'Wallet connected',
+                description: 'Your wallet has been connected and a new account created',
+              });
+            }
           } else {
-            // User already exists, sign in
+            // User already exists with this wallet address
             toast({
               title: 'Wallet connected',
-              description: 'Your wallet has been connected to your account',
+              description: 'Your wallet has been connected to your existing account',
             });
+            
+            // Refresh user profile to ensure we have the latest data
+            await refreshUserProfile();
           }
         } catch (error) {
           console.error('Error in wallet authentication:', error);
@@ -67,7 +88,7 @@ export const WalletConnect = () => {
     };
 
     handleWalletAuth();
-  }, [isConnected, address, toast]);
+  }, [isConnected, address, toast, user, refreshUserProfile]);
 
   // Handle wallet connection/disconnection
   const handleWalletAction = async () => {
