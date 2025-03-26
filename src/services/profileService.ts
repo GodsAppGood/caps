@@ -1,6 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/auth';
-import { useToast } from '@/hooks/use-toast';
+import { toast as toastFunction } from '@/hooks/use-toast';
 
 // Fetch user profile
 export const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
@@ -20,10 +21,10 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile | nu
 };
 
 // Upload avatar
-export const uploadAvatar = async (file: File, userId: string, toast: ReturnType<typeof useToast>): Promise<string | null> => {
+export const uploadAvatar = async (file: File, userId: string): Promise<string | null> => {
   try {
     if (!file) {
-      toast({
+      toastFunction({
         title: "No file selected",
         description: "Please choose an image to upload",
         variant: "destructive"
@@ -44,11 +45,11 @@ export const uploadAvatar = async (file: File, userId: string, toast: ReturnType
     if (uploadError) throw uploadError;
 
     // Get public URL
-    const { data: { publicUrl }, error: urlError } = supabase.storage
+    const { data } = supabase.storage
       .from('avatars')
       .getPublicUrl(filePath);
 
-    if (urlError) throw urlError;
+    const publicUrl = data.publicUrl;
 
     // Update profile with new avatar URL
     const { error: profileUpdateError } = await supabase
@@ -58,7 +59,7 @@ export const uploadAvatar = async (file: File, userId: string, toast: ReturnType
 
     if (profileUpdateError) throw profileUpdateError;
 
-    toast({
+    toastFunction({
       title: "Avatar Updated",
       description: "Your profile picture has been successfully updated"
     });
@@ -66,7 +67,7 @@ export const uploadAvatar = async (file: File, userId: string, toast: ReturnType
     return publicUrl;
   } catch (error) {
     console.error('Error uploading avatar:', error);
-    toast({
+    toastFunction({
       title: "Upload Failed",
       description: "There was an error uploading your avatar",
       variant: "destructive"

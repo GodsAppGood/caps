@@ -5,7 +5,7 @@ import type { User, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { useAccount } from 'wagmi';
 import { AuthContextType, UserProfile } from '@/types/auth';
-import { fetchUserProfile, updateWalletAddress, uploadAvatar as uploadAvatarService } from '@/services/profileService';
+import { fetchUserProfile, updateWalletAddress, uploadAvatar } from '@/services/profileService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -28,10 +28,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Upload avatar image
-  const uploadAvatar = async (file: File): Promise<string | null> => {
+  const handleUploadAvatar = async (file: File): Promise<string | null> => {
     if (!user) return null;
     
-    const url = await uploadAvatarService(file, user.id, toast);
+    const url = await uploadAvatar(file, user.id);
     
     // Refresh the profile to get updated data
     if (url) {
@@ -124,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userProfile,
     signOut,
     refreshUserProfile,
-    uploadAvatar,
+    uploadAvatar: handleUploadAvatar,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
