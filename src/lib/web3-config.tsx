@@ -6,7 +6,7 @@ import { Web3Modal } from '@web3modal/react';
 import { FC } from 'react';
 
 // Add your project ID from WalletConnect Cloud (this is required)
-const projectId = 'YOUR_WALLETCONNECT_PROJECT_ID';
+const projectId = '3bffda126f23d0bd2c76873bf75106d5';
 
 // Configure supported chains (adding BSC Testnet for development)
 const chains = [mainnet, bsc, bscTestnet];
