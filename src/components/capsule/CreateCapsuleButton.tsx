@@ -31,18 +31,31 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
       }
 
       console.log("Requesting account access from wallet");
-      // Request access to the user's accounts
-      await window.ethereum.request({ method: "eth_requestAccounts" });
-      console.log("Account access granted");
+      try {
+        // Request access to the user's accounts
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        console.log("Account access granted");
+      } catch (error) {
+        console.error("Error requesting accounts:", error);
+        toast({
+          title: "Wallet access denied",
+          description: "Please allow access to your wallet to proceed with payment",
+          variant: "destructive",
+        });
+        return;
+      }
 
       // Create a Web3Provider instance
+      console.log("Creating Web3Provider instance");
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       
       // Check if user is on BSC network
+      console.log("Checking network...");
       const network = await provider.getNetwork();
       console.log("Current network:", network);
       
-      if (network.chainId !== 56 && network.chainId !== 97) { // 56 for BSC Mainnet, 97 for BSC Testnet
+      // Only for BSC Mainnet (56) or BSC Testnet (97)
+      if (network.chainId !== 56 && network.chainId !== 97) {
         console.log("User not on BSC network. Attempting to switch...");
         try {
           // Try to switch to BSC network
@@ -101,45 +114,55 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
       const signer = updatedProvider.getSigner();
       
       // Get user address for confirmation
-      const userAddress = await signer.getAddress();
-      console.log("Sending payment from address:", userAddress);
+      try {
+        const userAddress = await signer.getAddress();
+        console.log("Sending payment from address:", userAddress);
 
-      // Create transaction parameters
-      const tx = {
-        to: RECIPIENT_ADDRESS,
-        value: ethers.utils.parseEther("0.01"), // Always 0.01 BNB
-      };
+        // Create transaction parameters with explicit gas settings
+        const tx = {
+          to: RECIPIENT_ADDRESS,
+          value: ethers.utils.parseEther("0.01"), // Always 0.01 BNB
+          gasLimit: ethers.utils.hexlify(21000), // Standard gas limit for simple transfers
+        };
 
-      console.log("Preparing transaction:", tx);
+        console.log("Preparing transaction:", tx);
 
-      // Send the transaction
-      console.log("Sending transaction...");
-      const transaction = await signer.sendTransaction(tx);
-      console.log("Transaction sent:", transaction.hash);
-      
-      // Show pending toast
-      toast({
-        title: "Transaction Sent",
-        description: "Waiting for transaction confirmation...",
-      });
-      
-      // Wait for transaction to be mined
-      console.log("Waiting for transaction confirmation...");
-      const receipt = await transaction.wait();
-      console.log("Transaction receipt:", receipt);
-
-      // If transaction was successful, proceed with onClick (create capsule)
-      if (receipt.status === 1) {
+        // Send the transaction
+        console.log("Sending transaction...");
+        const transaction = await signer.sendTransaction(tx);
+        console.log("Transaction sent:", transaction.hash);
+        
+        // Show pending toast
         toast({
-          title: "Payment Successful",
-          description: "Your payment of 0.01 BNB has been processed successfully",
+          title: "Transaction Sent",
+          description: "Waiting for transaction confirmation...",
         });
-        console.log("Payment successful, creating capsule...");
-        onClick();
-      } else {
+        
+        // Wait for transaction to be mined
+        console.log("Waiting for transaction confirmation...");
+        const receipt = await transaction.wait();
+        console.log("Transaction receipt:", receipt);
+
+        // If transaction was successful, proceed with onClick (create capsule)
+        if (receipt.status === 1) {
+          toast({
+            title: "Payment Successful",
+            description: "Your payment of 0.01 BNB has been processed successfully",
+          });
+          console.log("Payment successful, creating capsule...");
+          onClick();
+        } else {
+          toast({
+            title: "Payment Failed",
+            description: "Transaction was not successful",
+            variant: "destructive",
+          });
+        }
+      } catch (txError) {
+        console.error("Transaction error:", txError);
         toast({
-          title: "Payment Failed",
-          description: "Transaction was not successful",
+          title: "Transaction Error",
+          description: "There was an error processing your transaction",
           variant: "destructive",
         });
       }
