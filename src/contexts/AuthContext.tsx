@@ -1,25 +1,11 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { useToast } from '@/hooks/use-toast';
 import { useAccount } from 'wagmi';
-
-type UserProfile = {
-  id: string;
-  username?: string;
-  avatar_url?: string;
-  wallet_address?: string;
-}
-
-type AuthContextType = {
-  user: User | null;
-  session: Session | null;
-  isLoading: boolean;
-  userProfile: UserProfile | null;
-  signOut: () => Promise<void>;
-  refreshUserProfile: () => Promise<void>;
-  uploadAvatar: (file: File) => Promise<string | null>;
-};
+import { AuthContextType, UserProfile } from '@/types/auth';
+import { fetchUserProfile, updateWalletAddress, uploadAvatar as uploadAvatarService } from '@/services/profileService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -31,29 +17,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const { address } = useAccount();
 
-  // Fetch user profile data
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      if (error) throw error;
-      
-      if (data) {
-        setUserProfile(data);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-    }
-  };
-
   // Refresh user profile data
   const refreshUserProfile = async () => {
     if (user?.id) {
-      await fetchUserProfile(user.id);
+      const profile = await fetchUserProfile(user.id);
+      if (profile) {
+        setUserProfile(profile);
+      }
     }
   };
 
@@ -61,72 +31,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const uploadAvatar = async (file: File): Promise<string | null> => {
     if (!user) return null;
     
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      const filePath = fileName;
-      
-      // Upload file to storage
-      const { error: uploadError } = await supabase.storage
-        .from('profile_images')
-        .upload(filePath, file, { upsert: true });
-      
-      if (uploadError) throw uploadError;
-      
-      // Get public URL
-      const { data } = supabase.storage
-        .from('profile_images')
-        .getPublicUrl(filePath);
-      
-      // Update user profile with new avatar URL
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: data.publicUrl })
-        .eq('id', user.id);
-      
-      if (updateError) throw updateError;
-      
-      // Refresh the profile to get updated data
+    const url = await uploadAvatarService(file, user.id, toast);
+    
+    // Refresh the profile to get updated data
+    if (url) {
       await refreshUserProfile();
-      
-      toast({
-        title: "Avatar updated",
-        description: "Your profile image has been updated successfully",
-      });
-      
-      return data.publicUrl;
-    } catch (error: any) {
-      console.error('Error uploading avatar:', error);
-      toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload profile image",
-        variant: "destructive",
-      });
-      return null;
     }
+    
+    return url;
   };
 
   // Update wallet address if needed
   useEffect(() => {
-    const updateWalletAddress = async () => {
+    const updateUserWalletAddress = async () => {
       if (user && address && userProfile && userProfile.wallet_address !== address) {
-        try {
-          const { error } = await supabase
-            .from('profiles')
-            .update({ wallet_address: address })
-            .eq('id', user.id);
-          
-          if (error) throw error;
-          
-          // Refresh user profile
-          await refreshUserProfile();
-        } catch (error) {
-          console.error('Error updating wallet address:', error);
-        }
+        await updateWalletAddress(user.id, address);
+        
+        // Refresh user profile
+        await refreshUserProfile();
       }
     };
     
-    updateWalletAddress();
+    updateUserWalletAddress();
   }, [user, address, userProfile]);
 
   useEffect(() => {
@@ -137,7 +63,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          fetchUserProfile(session.user.id);
+          fetchUserProfile(session.user.id).then(profile => {
+            if (profile) {
+              setUserProfile(profile);
+            }
+          });
         } else {
           setUserProfile(null);
         }
@@ -152,7 +82,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserProfile(session.user.id);
+        fetchUserProfile(session.user.id).then(profile => {
+          if (profile) {
+            setUserProfile(profile);
+          }
+        });
       }
       
       setIsLoading(false);
