@@ -65,3 +65,38 @@ export const sendPaymentTransaction = async (
     return null;
   }
 };
+
+/**
+ * Handles the capsule creation transaction process
+ * @param recipientAddress Address to send the payment to
+ * @param amount Amount to send in BNB
+ * @param onSuccess Callback function to execute on successful payment
+ * @returns boolean indicating success or failure
+ */
+export const handleCapsuleCreationTransaction = async (
+  recipientAddress: string,
+  amount: string,
+  onSuccess: () => void
+): Promise<boolean> => {
+  try {
+    // Send payment transaction
+    const receipt = await sendPaymentTransaction(recipientAddress, amount);
+    
+    // If payment was successful, call the success callback
+    if (receipt) {
+      console.log("Payment successful, creating capsule...");
+      onSuccess();
+      return true;
+    }
+    
+    return false;
+  } catch (error: any) {
+    console.error("Capsule creation transaction error:", error);
+    toast({
+      title: "Capsule Creation Error",
+      description: error.message || "An error occurred processing the capsule creation",
+      variant: "destructive",
+    });
+    return false;
+  }
+};
