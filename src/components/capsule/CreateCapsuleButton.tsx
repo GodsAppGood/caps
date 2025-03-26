@@ -43,6 +43,18 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
         return;
       }
 
+      // Make sure ethereum provider exists in window
+      if (typeof window === 'undefined' || !window.ethereum) {
+        console.log("Ethereum provider not found");
+        toast({
+          title: "Wallet Error",
+          description: "No Ethereum provider found. Please install MetaMask or another compatible wallet",
+          variant: "destructive",
+        });
+        setProcessingPayment(false);
+        return;
+      }
+
       // Check if wallet is installed and request access
       const isWalletReady = await checkWalletConnection();
       if (!isWalletReady) {
@@ -66,18 +78,49 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
 
       console.log(`Proceeding with ${currency} transaction (${amount} ${currency}) to address:`, RECIPIENT_ADDRESS);
       
-      // Process payment and create capsule on success
-      const success = await handleCapsuleCreationTransaction(RECIPIENT_ADDRESS, amount, onClick);
-      
-      if (success) {
+      try {
+        // Get the provider and signer
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        
+        // Create transaction
+        const tx = {
+          to: RECIPIENT_ADDRESS,
+          value: ethers.utils.parseEther(amount),
+          gasLimit: ethers.utils.hexlify(100000), // Increased gas limit for transfers
+        };
+        
+        console.log("Sending transaction:", tx);
+        
+        // Send transaction directly
+        const transaction = await signer.sendTransaction(tx);
+        console.log("Transaction sent:", transaction.hash);
+        
         toast({
-          title: "Payment Successful",
-          description: `Your payment of ${amount} ${currency} was successful. Your capsule is being created.`,
+          title: "Transaction Sent",
+          description: `Your payment of ${amount} ${currency} is being processed...`,
         });
-      } else {
-        throw new Error(`Transaction was not completed successfully. Please try again.`);
+        
+        // Wait for confirmation
+        const receipt = await transaction.wait();
+        console.log("Transaction confirmed:", receipt);
+        
+        if (receipt.status === 1) {
+          toast({
+            title: "Payment Successful",
+            description: `Your payment of ${amount} ${currency} has been processed`,
+          });
+          
+          // Call the onClick callback to continue with capsule creation
+          onClick();
+          return true;
+        } else {
+          throw new Error(`Transaction was not successful. Status: ${receipt.status}`);
+        }
+      } catch (txError: any) {
+        console.error("Transaction execution error:", txError);
+        throw new Error(txError.message || "Failed to execute transaction");
       }
-      
     } catch (error: any) {
       console.error("Payment error:", error);
       toast({
@@ -85,6 +128,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
         description: error.message || "An error occurred processing the payment",
         variant: "destructive",
       });
+      return false;
     } finally {
       setProcessingPayment(false);
     }

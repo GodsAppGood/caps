@@ -5,8 +5,8 @@ import { EthereumClient, w3mConnectors, w3mProvider } from '@web3modal/ethereum'
 import { Web3Modal } from '@web3modal/react';
 import { FC } from 'react';
 
-// Replace with your real Project ID from WalletConnect Cloud
-const projectId = 'YOUR_PROJECT_ID';
+// Add your project ID from WalletConnect Cloud (this is required)
+const projectId = 'YOUR_WALLETCONNECT_PROJECT_ID';
 
 // Configure supported chains (adding BSC Testnet for development)
 const chains = [mainnet, bsc, bscTestnet];
