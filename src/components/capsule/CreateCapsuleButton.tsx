@@ -17,9 +17,11 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
   const { toast } = useToast();
 
   const handlePayment = async () => {
+    console.log("Payment button clicked");
     try {
       // Check if MetaMask is installed
       if (typeof window.ethereum === "undefined") {
+        console.log("MetaMask not detected");
         toast({
           title: "Wallet not found",
           description: "Please install MetaMask or another Ethereum wallet",
@@ -28,24 +30,32 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
         return;
       }
 
+      console.log("Requesting account access from wallet");
       // Request access to the user's accounts
       await window.ethereum.request({ method: "eth_requestAccounts" });
+      console.log("Account access granted");
 
       // Create a Web3Provider instance
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       
       // Check if user is on BSC network
       const network = await provider.getNetwork();
+      console.log("Current network:", network);
+      
       if (network.chainId !== 56 && network.chainId !== 97) { // 56 for BSC Mainnet, 97 for BSC Testnet
+        console.log("User not on BSC network. Attempting to switch...");
         try {
           // Try to switch to BSC network
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
             params: [{ chainId: '0x38' }], // 0x38 is 56 in hex (BSC Mainnet)
           });
+          console.log("Successfully switched to BSC network");
         } catch (switchError: any) {
+          console.log("Error while switching networks:", switchError);
           // If BSC network isn't added to MetaMask, prompt user to add it
           if (switchError.code === 4902) {
+            console.log("BSC network not found in wallet, trying to add it");
             try {
               await window.ethereum.request({
                 method: 'wallet_addEthereumChain',
@@ -63,6 +73,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
                   },
                 ],
               });
+              console.log("Successfully added BSC network");
             } catch (addError) {
               console.error("Error adding BSC network:", addError);
               toast({
@@ -85,6 +96,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
       }
 
       // Get the signer after potentially switching networks
+      console.log("Getting updated provider after network switch");
       const updatedProvider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = updatedProvider.getSigner();
       
@@ -101,6 +113,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
       console.log("Preparing transaction:", tx);
 
       // Send the transaction
+      console.log("Sending transaction...");
       const transaction = await signer.sendTransaction(tx);
       console.log("Transaction sent:", transaction.hash);
       
@@ -111,6 +124,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
       });
       
       // Wait for transaction to be mined
+      console.log("Waiting for transaction confirmation...");
       const receipt = await transaction.wait();
       console.log("Transaction receipt:", receipt);
 
@@ -144,6 +158,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
       className="w-full bg-gradient-to-r from-neon-blue to-neon-pink text-white hover:opacity-90 transition-opacity"
       onClick={handlePayment}
       disabled={isLoading}
+      type="button"
     >
       {isLoading ? (
         <span className="flex items-center">
