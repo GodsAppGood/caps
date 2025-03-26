@@ -23,7 +23,10 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
   const [processingPayment, setProcessingPayment] = useState(false);
 
   const handlePayment = async () => {
-    console.log("Payment button clicked with method:", paymentMethod === 0 ? "BNB" : "ETH");
+    const currency = paymentMethod === 0 ? "BNB" : "ETH";
+    const amount = paymentMethod === 0 ? "0.01" : "0.005";
+    
+    console.log(`Payment button clicked with method: ${currency}, amount: ${amount}`);
     setProcessingPayment(true);
     
     try {
@@ -61,15 +64,36 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
         return;
       }
       
-      // Determine payment amount based on selected method
-      const amount = paymentMethod === 0 ? "0.01" : "0.005";
-      const currency = paymentMethod === 0 ? "BNB" : "ETH";
-      
       // For BNB, we need to switch to BSC network
       if (paymentMethod === 0) {
         // Check and switch to BSC network if needed
         const isNetworkReady = await switchToBscNetwork();
         if (!isNetworkReady) {
+          setProcessingPayment(false);
+          return;
+        }
+      } else {
+        // For ETH, make sure we're on the Ethereum network
+        try {
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const network = await provider.getNetwork();
+          
+          // If not on Ethereum network (chainId 1), prompt to switch
+          if (network.chainId !== 1) {
+            console.log("User not on Ethereum network. Attempting to switch...");
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: '0x1' }], // 0x1 is 1 in hex (Ethereum Mainnet)
+            });
+            console.log("Successfully switched to Ethereum network");
+          }
+        } catch (switchError: any) {
+          console.error("Error switching to Ethereum network:", switchError);
+          toast({
+            title: "Network Error",
+            description: "Please switch to Ethereum network manually",
+            variant: "destructive",
+          });
           setProcessingPayment(false);
           return;
         }

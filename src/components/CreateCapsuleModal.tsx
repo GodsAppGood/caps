@@ -1,11 +1,9 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { createCapsule } from "@/services/capsuleService";
-import { createCapsuleWithPayment } from "@/lib/contractHelpers";
 import { useAccount } from "wagmi";
 
 // Import sub-components
@@ -107,20 +105,6 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
     try {
       setIsLoading(true);
       
-      const content = message || "Empty time capsule";
-      const unlockTime = Math.floor(selectedDate.getTime() / 1000); // Convert to unix timestamp
-      
-      const blockchainResult = await createCapsuleWithPayment(
-        capsuleName,
-        selectedImage || content,
-        unlockTime,
-        paymentMethod === 0 ? 'BNB' : 'ETH'
-      );
-      
-      if (!blockchainResult) {
-        throw new Error("Payment failed. The capsule wasn't created. Please try again.");
-      }
-      
       let imageUrl: string | null = null;
       if (selectedImage) {
         const fileExt = selectedImage.name.split('.').pop();
@@ -138,6 +122,8 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
         imageUrl = supabase.storage.from('capsule_images').getPublicUrl(filePath).data.publicUrl;
       }
       
+      const content = message || "Empty time capsule";
+      
       const capsuleData = {
         name: capsuleName,
         creator_id: userProfile.id,
@@ -152,16 +138,16 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
 
       toast({
         title: "Success",
-        description: "Payment successful! Your time capsule has been created.",
+        description: "Your time capsule has been created successfully.",
       });
 
       resetForm();
       onClose();
     } catch (error: any) {
-      console.error("Error in payment or creating capsule:", error);
+      console.error("Error creating capsule:", error);
       toast({
         title: "Error",
-        description: error.message || "Payment or capsule creation failed",
+        description: error.message || "Capsule creation failed",
         variant: "destructive",
       });
     } finally {
