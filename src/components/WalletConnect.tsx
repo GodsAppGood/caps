@@ -5,6 +5,7 @@ import { Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { updateWalletAddress } from '@/services/profileService';
 
 export const WalletConnect = () => {
   const { isConnected, address } = useAccount();
@@ -33,7 +34,7 @@ export const WalletConnect = () => {
             .maybeSingle();
 
           if (!existingUser) {
-            // If no user with this wallet, create new wallet-based auth
+            // If no user with this wallet, create new wallet-based profile
             console.log("No existing user found with this wallet address, creating new account");
             
             // Use wallet address as the unique identifier for authentication
@@ -48,47 +49,26 @@ export const WalletConnect = () => {
             });
             
             if (error) {
-              // If signup fails, try to sign in (this could be due to rate limits or existing user)
-              console.log("Signup failed, attempting login:", error);
-              const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-                email: `${address.toLowerCase()}@wallet.auth`,
-                password: "wallet-auth", // Try a default password for existing accounts
+              console.error("Signup error:", error);
+              toast({
+                title: 'Authentication Error',
+                description: 'There was a problem connecting your wallet',
+                variant: 'destructive',
               });
-              
-              if (signInError) throw signInError;
+              return;
             }
-            
-            // Refresh user profile to ensure we have the latest data
-            await refreshUserProfile();
-            
-            toast({
-              title: 'Wallet connected',
-              description: 'Your wallet has been connected and your account is ready',
-            });
-          } else {
-            console.log("Existing user found with this wallet address, signing in");
-            // User already exists with this wallet address
-            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-              email: `${address.toLowerCase()}@wallet.auth`,
-              password: "wallet-auth", // Try a default password for existing accounts
-            });
-            
-            if (signInError) {
-              console.warn("Could not sign in with standard password, using magic link");
-              // If standard sign-in fails, we'll use a magic link
-              await supabase.auth.signInWithOtp({
-                email: `${address.toLowerCase()}@wallet.auth`,
-              });
-            }
-            
-            // Refresh user profile to ensure we have the latest data
-            await refreshUserProfile();
-            
-            toast({
-              title: 'Wallet connected',
-              description: 'You have been signed in with your wallet',
-            });
           }
+
+          // Update or set wallet address in profiles
+          await updateWalletAddress(user?.id || '', address);
+          
+          // Refresh user profile to ensure we have the latest data
+          await refreshUserProfile();
+          
+          toast({
+            title: 'Wallet connected',
+            description: 'Your wallet has been connected and your account is ready',
+          });
         } catch (error) {
           console.error('Error in wallet authentication:', error);
           toast({
@@ -101,7 +81,7 @@ export const WalletConnect = () => {
     };
 
     handleWalletAuth();
-  }, [isConnected, address, toast, refreshUserProfile]);
+  }, [isConnected, address, toast, refreshUserProfile, user?.id]);
 
   // Handle wallet connection/disconnection
   const handleWalletAction = async () => {

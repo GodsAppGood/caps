@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAccount } from "wagmi";
 import { checkWalletConnection, switchToBscNetwork, openWalletModal } from "@/utils/walletUtils";
 import { handleCapsuleCreationTransaction } from "@/utils/transactionUtils";
+import { ethers } from "ethers";
 
 interface CreateCapsuleButtonProps {
   isLoading: boolean;
