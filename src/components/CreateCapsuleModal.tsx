@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -6,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { createCapsule } from "@/services/capsuleService";
 import { createCapsuleWithPayment } from "@/lib/contractHelpers";
+import { useAccount } from "wagmi";
 
 // Import sub-components
 import CapsuleNameInput from "./capsule/CapsuleNameInput";
@@ -32,6 +32,7 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
   const [paymentMethod, setPaymentMethod] = useState(0); // 0 = BNB, 1 = ETH
   const { toast } = useToast();
   const { userProfile } = useAuth();
+  const { isConnected } = useAccount();
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -61,11 +62,24 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
     setPaymentMethod(0);
   };
 
+  const getPaymentAmountDisplay = () => {
+    return paymentMethod === 0 ? "0.01 BNB" : "0.005 ETH";
+  };
+
   const handleCreateCapsule = async () => {
     if (!userProfile) {
       toast({
         title: "Error",
         description: "You must be logged in to create a time capsule",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isConnected) {
+      toast({
+        title: "Error",
+        description: "Please connect your wallet to pay for the capsule creation",
         variant: "destructive",
       });
       return;
@@ -92,6 +106,20 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
     try {
       setIsLoading(true);
       
+      const content = message || "Empty time capsule";
+      const unlockTime = Math.floor(selectedDate.getTime() / 1000); // Convert to unix timestamp
+      
+      const blockchainResult = await createCapsuleWithPayment(
+        capsuleName,
+        selectedImage || content,
+        unlockTime,
+        paymentMethod === 0 ? 'BNB' : 'ETH'
+      );
+      
+      if (!blockchainResult) {
+        throw new Error("Payment failed. The capsule wasn't created. Please try again.");
+      }
+      
       let imageUrl: string | null = null;
       if (selectedImage) {
         const fileExt = selectedImage.name.split('.').pop();
@@ -109,7 +137,6 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
         imageUrl = supabase.storage.from('capsule_images').getPublicUrl(filePath).data.publicUrl;
       }
       
-      // First create the capsule in the database
       const capsuleData = {
         name: capsuleName,
         creator_id: userProfile.id,
@@ -120,36 +147,20 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
         status: 'closed' as 'closed'
       };
       
-      const result = await createCapsule(capsuleData);
-      
-      // Then process blockchain payment
-      const content = message || "Empty time capsule";
-      const unlockTime = Math.floor(selectedDate.getTime() / 1000); // Convert to unix timestamp
-      
-      // Call blockchain function with selected payment method
-      const blockchainResult = await createCapsuleWithPayment(
-        capsuleName,
-        selectedImage || content,
-        unlockTime,
-        paymentMethod === 0 ? 'BNB' : 'ETH'
-      );
-      
-      if (!blockchainResult) {
-        throw new Error("Blockchain transaction failed. Your capsule has been created in the database but not on the blockchain.");
-      }
+      await createCapsule(capsuleData);
 
       toast({
         title: "Success",
-        description: "Your time capsule has been created successfully!",
+        description: "Payment successful! Your time capsule has been created.",
       });
 
       resetForm();
       onClose();
     } catch (error: any) {
-      console.error("Error creating capsule:", error);
+      console.error("Error in payment or creating capsule:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create time capsule",
+        description: error.message || "Payment or capsule creation failed",
         variant: "destructive",
       });
     } finally {
@@ -182,7 +193,11 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
           </div>
         </div>
 
-        <CreateCapsuleButton isLoading={isLoading} onClick={handleCreateCapsule} />
+        <CreateCapsuleButton 
+          isLoading={isLoading} 
+          onClick={handleCreateCapsule} 
+          paymentAmount={getPaymentAmountDisplay()}
+        />
       </DialogContent>
     </Dialog>
   );

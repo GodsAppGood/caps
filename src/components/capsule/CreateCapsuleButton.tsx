@@ -1,14 +1,15 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, CreditCard } from "lucide-react";
 
 interface CreateCapsuleButtonProps {
   isLoading: boolean;
   onClick: () => void;
+  paymentAmount: string;
 }
 
-const CreateCapsuleButton = ({ isLoading, onClick }: CreateCapsuleButtonProps) => {
+const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsuleButtonProps) => {
   return (
     <Button
       className="w-full bg-gradient-to-r from-neon-blue to-neon-pink text-white hover:opacity-90 transition-opacity"
@@ -17,11 +18,11 @@ const CreateCapsuleButton = ({ isLoading, onClick }: CreateCapsuleButtonProps) =
     >
       {isLoading ? (
         <span className="flex items-center">
-          <span className="animate-spin mr-2">⟳</span> CREATING...
+          <span className="animate-spin mr-2">⟳</span> PROCESSING PAYMENT...
         </span>
       ) : (
         <span className="flex items-center">
-          <Check className="mr-2 h-5 w-5" /> CREATE CAPSULE
+          <CreditCard className="mr-2 h-5 w-5" /> PAY {paymentAmount} & CREATE CAPSULE
         </span>
       )}
     </Button>
