@@ -42,12 +42,7 @@ const Hero = () => {
           <br />
           Set an opening date or start an auction for early access!
         </p>
-        <Button
-          className="rounded-full text-lg px-8 py-6 bg-gradient-to-r from-neon-pink to-neon-blue hover:opacity-90 transition-all animate-fade-in delay-500 hover:scale-105 transform"
-          onClick={() => navigate("/profile")}
-        >
-          🚀 CREATE CAPSULE
-        </Button>
+        {/* Button removed as per user request */}
       </div>
     </section>
   );
