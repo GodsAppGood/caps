@@ -144,7 +144,13 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
         }
       } catch (txError: any) {
         console.error("Transaction execution error:", txError);
-        throw new Error(txError.message || "Failed to execute transaction");
+        toast({
+          title: "Transaction Error",
+          description: txError.message || "Failed to execute transaction",
+          variant: "destructive",
+        });
+        onClick(false);
+        return false;
       }
     } catch (error: any) {
       console.error("Payment error:", error);

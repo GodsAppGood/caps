@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export type Capsule = {
@@ -48,6 +49,8 @@ export type CapsuleCreate = {
 
 export const createCapsule = async (capsuleData: CapsuleCreate) => {
   try {
+    console.log("Creating capsule with data:", capsuleData);
+    
     const { data, error } = await supabase
       .from('capsules')
       .insert({
@@ -72,6 +75,7 @@ export const createCapsule = async (capsuleData: CapsuleCreate) => {
       throw error;
     }
 
+    console.log("Capsule created successfully:", data);
     return data;
   } catch (error) {
     console.error("Unexpected error in createCapsule:", error);
