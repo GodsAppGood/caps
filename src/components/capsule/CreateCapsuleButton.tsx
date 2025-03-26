@@ -54,8 +54,19 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
         return;
       }
 
+      console.log("Proceeding with transaction to address:", RECIPIENT_ADDRESS);
+      
       // Process payment and create capsule on success
-      await handleCapsuleCreationTransaction(RECIPIENT_ADDRESS, "0.01", onClick);
+      const success = await handleCapsuleCreationTransaction(RECIPIENT_ADDRESS, "0.01", onClick);
+      
+      if (success) {
+        toast({
+          title: "Payment Successful",
+          description: "Your capsule is being created",
+        });
+      } else {
+        throw new Error("Transaction was not completed successfully");
+      }
       
     } catch (error: any) {
       console.error("Payment error:", error);

@@ -21,9 +21,15 @@ export const checkWalletConnection = async (): Promise<boolean> => {
     // Request account access
     console.log("Requesting account access");
     await window.ethereum.request({ method: "eth_requestAccounts" });
+    console.log("Account access granted");
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error connecting to wallet:", error);
+    toast({
+      title: "Wallet Connection Error",
+      description: error.message || "Failed to connect to your wallet",
+      variant: "destructive",
+    });
     return false;
   }
 };
@@ -40,6 +46,7 @@ export const switchToBscNetwork = async (): Promise<boolean> => {
     
     // Already on BSC network
     if (network.chainId === 56 || network.chainId === 97) {
+      console.log("Already on BSC network");
       return true;
     }
     
@@ -76,7 +83,7 @@ export const switchToBscNetwork = async (): Promise<boolean> => {
           });
           console.log("Successfully added BSC network");
           return true;
-        } catch (addError) {
+        } catch (addError: any) {
           console.error("Error adding BSC network:", addError);
           toast({
             title: "Network Error",
@@ -95,8 +102,13 @@ export const switchToBscNetwork = async (): Promise<boolean> => {
         return false;
       }
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error checking/switching network:", error);
+    toast({
+      title: "Network Error",
+      description: error.message || "Failed to check or switch network",
+      variant: "destructive",
+    });
     return false;
   }
 };
@@ -107,4 +119,5 @@ export const switchToBscNetwork = async (): Promise<boolean> => {
 export const openWalletModal = () => {
   const w3mEvent = new Event('w3m-open-modal');
   document.dispatchEvent(w3mEvent);
+  console.log("Wallet connection modal opened");
 };

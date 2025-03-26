@@ -23,7 +23,7 @@ export const sendPaymentTransaction = async (
     const tx = {
       to: recipientAddress,
       value: ethers.utils.parseEther(amount),
-      gasLimit: ethers.utils.hexlify(21000), // Standard gas limit for transfers
+      gasLimit: ethers.utils.hexlify(100000), // Increased gas limit for transfers
     };
 
     console.log("Preparing transaction:", tx);
@@ -79,6 +79,7 @@ export const handleCapsuleCreationTransaction = async (
   onSuccess: () => void
 ): Promise<boolean> => {
   try {
+    console.log("Starting capsule creation transaction process");
     // Send payment transaction
     const receipt = await sendPaymentTransaction(recipientAddress, amount);
     
@@ -89,6 +90,12 @@ export const handleCapsuleCreationTransaction = async (
       return true;
     }
     
+    console.log("Payment failed or was not confirmed");
+    toast({
+      title: "Payment Not Completed",
+      description: "The payment transaction wasn't confirmed. Please try again.",
+      variant: "destructive",
+    });
     return false;
   } catch (error: any) {
     console.error("Capsule creation transaction error:", error);
