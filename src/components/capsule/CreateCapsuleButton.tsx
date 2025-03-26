@@ -25,8 +25,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
       if (!isConnected || !address) {
         console.log("Wallet not connected");
         toast({
-          title: "Кошелек не подключен",
-          description: "Пожалуйста, подключите кошелек для оплаты",
+          title: "Wallet Not Connected",
+          description: "Please connect your wallet to proceed with payment",
           variant: "destructive",
         });
         
@@ -40,8 +40,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
       if (typeof window.ethereum === "undefined") {
         console.log("Wallet not detected");
         toast({
-          title: "Кошелек не обнаружен",
-          description: "Пожалуйста, установите MetaMask или другой совместимый кошелек",
+          title: "Wallet Not Found",
+          description: "Please install MetaMask or another compatible wallet",
           variant: "destructive",
         });
         return;
@@ -92,8 +92,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
             } catch (addError) {
               console.error("Error adding BSC network:", addError);
               toast({
-                title: "Ошибка сети",
-                description: "Не удалось добавить сеть BSC в ваш кошелек",
+                title: "Network Error",
+                description: "Failed to add BSC network to your wallet",
                 variant: "destructive",
               });
               return;
@@ -101,8 +101,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
           } else {
             console.error("Error switching to BSC network:", switchError);
             toast({
-              title: "Ошибка сети",
-              description: "Пожалуйста, переключитесь на сеть Binance Smart Chain",
+              title: "Network Error",
+              description: "Please switch to Binance Smart Chain network",
               variant: "destructive",
             });
             return;
@@ -135,8 +135,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
         console.log("Transaction sent:", transaction.hash);
         
         toast({
-          title: "Транзакция отправлена",
-          description: "Ожидание подтверждения транзакции...",
+          title: "Transaction Sent",
+          description: "Waiting for transaction confirmation...",
         });
         
         // Wait for confirmation
@@ -145,8 +145,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
 
         if (receipt.status === 1) {
           toast({
-            title: "Оплата успешна",
-            description: "Ваш платеж в размере 0.01 BNB успешно обработан",
+            title: "Payment Successful",
+            description: "Your payment of 0.01 BNB has been processed",
           });
           
           // Proceed with capsule creation
@@ -154,24 +154,24 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
           onClick();
         } else {
           toast({
-            title: "Ошибка оплаты",
-            description: "Транзакция не была успешной",
+            title: "Payment Error",
+            description: "Transaction was not successful",
             variant: "destructive",
           });
         }
       } catch (txError: any) {
         console.error("Transaction error:", txError);
         toast({
-          title: "Ошибка транзакции",
-          description: txError.message || "Произошла ошибка при обработке транзакции",
+          title: "Transaction Error",
+          description: txError.message || "An error occurred processing the transaction",
           variant: "destructive",
         });
       }
     } catch (error: any) {
       console.error("Payment error:", error);
       toast({
-        title: "Ошибка оплаты",
-        description: error.message || "Произошла ошибка при обработке платежа",
+        title: "Payment Error",
+        description: error.message || "An error occurred processing the payment",
         variant: "destructive",
       });
     }
@@ -186,11 +186,11 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
     >
       {isLoading ? (
         <span className="flex items-center">
-          <span className="animate-spin mr-2">⟳</span> ОБРАБОТКА ПЛАТЕЖА...
+          <span className="animate-spin mr-2">⟳</span> PROCESSING PAYMENT...
         </span>
       ) : (
         <span className="flex items-center">
-          <CreditCard className="mr-2 h-5 w-5" /> ОПЛАТИТЬ {paymentAmount} И СОЗДАТЬ КАПСУЛУ
+          <CreditCard className="mr-2 h-5 w-5" /> PAY {paymentAmount} AND CREATE CAPSULE
         </span>
       )}
     </Button>
@@ -198,3 +198,4 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
 };
 
 export default CreateCapsuleButton;
+
