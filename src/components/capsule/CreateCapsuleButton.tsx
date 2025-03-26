@@ -25,8 +25,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
       if (!isConnected || !address) {
         console.log("Wallet not connected");
         toast({
-          title: "Wallet not connected",
-          description: "Please connect your wallet first to proceed with payment",
+          title: "Кошелек не подключен",
+          description: "Пожалуйста, подключите кошелек для оплаты",
           variant: "destructive",
         });
         
@@ -36,20 +36,19 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
         return;
       }
 
-      // Create a Web3Provider instance
-      console.log("Creating Web3Provider instance");
-      
-      // Check if MetaMask is installed
+      // Check if MetaMask or other wallet is installed
       if (typeof window.ethereum === "undefined") {
-        console.log("MetaMask not detected");
+        console.log("Wallet not detected");
         toast({
-          title: "Wallet not found",
-          description: "Please install MetaMask or another Ethereum wallet",
+          title: "Кошелек не обнаружен",
+          description: "Пожалуйста, установите MetaMask или другой совместимый кошелек",
           variant: "destructive",
         });
         return;
       }
       
+      // Create a Web3Provider instance
+      console.log("Creating Web3Provider instance");
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       
       // Check if user is on BSC network
@@ -93,8 +92,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
             } catch (addError) {
               console.error("Error adding BSC network:", addError);
               toast({
-                title: "Network Error",
-                description: "Could not add BSC network to your wallet",
+                title: "Ошибка сети",
+                description: "Не удалось добавить сеть BSC в ваш кошелек",
                 variant: "destructive",
               });
               return;
@@ -102,8 +101,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
           } else {
             console.error("Error switching to BSC network:", switchError);
             toast({
-              title: "Network Error",
-              description: "Please switch to Binance Smart Chain network",
+              title: "Ошибка сети",
+              description: "Пожалуйста, переключитесь на сеть Binance Smart Chain",
               variant: "destructive",
             });
             return;
@@ -111,84 +110,68 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
         }
       }
 
-      // Request account access if needed (ensure we have permission)
-      console.log("Requesting account access from wallet");
       try {
+        // Ensure we have permission to the account
+        console.log("Requesting account access");
         await window.ethereum.request({ method: "eth_requestAccounts" });
-        console.log("Account access granted");
-      } catch (error) {
-        console.error("Error requesting accounts:", error);
-        toast({
-          title: "Wallet access denied",
-          description: "Please allow access to your wallet to proceed with payment",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Get the signer after potentially switching networks
-      console.log("Getting updated provider after network switch");
-      const updatedProvider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = updatedProvider.getSigner();
-      
-      // Get user address for confirmation
-      try {
+        
+        // Get the signer with fresh provider after potential network switch
+        const updatedProvider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = updatedProvider.getSigner();
         const userAddress = await signer.getAddress();
         console.log("Sending payment from address:", userAddress);
 
-        // Create transaction parameters with explicit gas settings
+        // Create transaction
         const tx = {
           to: RECIPIENT_ADDRESS,
           value: ethers.utils.parseEther("0.01"), // Always 0.01 BNB
-          gasLimit: ethers.utils.hexlify(21000), // Standard gas limit for simple transfers
+          gasLimit: ethers.utils.hexlify(21000), // Standard gas limit for transfers
         };
 
         console.log("Preparing transaction:", tx);
-
-        // Send the transaction
-        console.log("Sending transaction...");
+        
+        // Send transaction
         const transaction = await signer.sendTransaction(tx);
         console.log("Transaction sent:", transaction.hash);
         
-        // Show pending toast
         toast({
-          title: "Transaction Sent",
-          description: "Waiting for transaction confirmation...",
+          title: "Транзакция отправлена",
+          description: "Ожидание подтверждения транзакции...",
         });
         
-        // Wait for transaction to be mined
-        console.log("Waiting for transaction confirmation...");
+        // Wait for confirmation
         const receipt = await transaction.wait();
-        console.log("Transaction receipt:", receipt);
+        console.log("Transaction confirmed:", receipt);
 
-        // If transaction was successful, proceed with onClick (create capsule)
         if (receipt.status === 1) {
           toast({
-            title: "Payment Successful",
-            description: "Your payment of 0.01 BNB has been processed successfully",
+            title: "Оплата успешна",
+            description: "Ваш платеж в размере 0.01 BNB успешно обработан",
           });
+          
+          // Proceed with capsule creation
           console.log("Payment successful, creating capsule...");
           onClick();
         } else {
           toast({
-            title: "Payment Failed",
-            description: "Transaction was not successful",
+            title: "Ошибка оплаты",
+            description: "Транзакция не была успешной",
             variant: "destructive",
           });
         }
       } catch (txError: any) {
         console.error("Transaction error:", txError);
         toast({
-          title: "Transaction Error",
-          description: txError.message || "There was an error processing your transaction",
+          title: "Ошибка транзакции",
+          description: txError.message || "Произошла ошибка при обработке транзакции",
           variant: "destructive",
         });
       }
     } catch (error: any) {
       console.error("Payment error:", error);
       toast({
-        title: "Payment Failed",
-        description: error.message || "There was an error processing your payment",
+        title: "Ошибка оплаты",
+        description: error.message || "Произошла ошибка при обработке платежа",
         variant: "destructive",
       });
     }
@@ -203,11 +186,11 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount }: CreateCapsul
     >
       {isLoading ? (
         <span className="flex items-center">
-          <span className="animate-spin mr-2">⟳</span> PROCESSING PAYMENT...
+          <span className="animate-spin mr-2">⟳</span> ОБРАБОТКА ПЛАТЕЖА...
         </span>
       ) : (
         <span className="flex items-center">
-          <CreditCard className="mr-2 h-5 w-5" /> PAY {paymentAmount} & CREATE CAPSULE
+          <CreditCard className="mr-2 h-5 w-5" /> ОПЛАТИТЬ {paymentAmount} И СОЗДАТЬ КАПСУЛУ
         </span>
       )}
     </Button>
