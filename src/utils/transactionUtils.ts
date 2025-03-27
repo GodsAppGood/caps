@@ -13,8 +13,12 @@ export const sendPaymentTransaction = async (
   amount: string
 ): Promise<ethers.providers.TransactionReceipt | null> => {
   try {
+    console.log("Starting payment transaction");
+    
     // Get the provider and signer
     const provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    
     const signer = provider.getSigner();
     const userAddress = await signer.getAddress();
     console.log("Sending payment from address:", userAddress);
@@ -22,6 +26,7 @@ export const sendPaymentTransaction = async (
     // Check network to determine currency
     const network = await provider.getNetwork();
     const currency = network.chainId === 56 || network.chainId === 97 ? "BNB" : "ETH";
+    console.log("Network detected:", network.name, "Chain ID:", network.chainId, "Currency:", currency);
 
     // Create transaction
     const tx = {

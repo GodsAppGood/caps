@@ -23,6 +23,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod,
   const { setIsLoading } = useCapsuleCreation();
 
   const handlePayment = async () => {
+    console.log("Payment process started");
+    
     if (processingPayment) {
       console.log("Payment already processing, skipping...");
       return;
@@ -85,8 +87,11 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod,
         }
       }
 
+      console.log("Initiating payment process with method:", paymentMethod);
+      
       // Process payment using the utility function
       await processCapsulePayment(paymentMethod, (success, txHash) => {
+        console.log("Payment completed:", success, "txHash:", txHash);
         setProcessingPayment(false);
         if (!success) {
           setIsLoading(false);
