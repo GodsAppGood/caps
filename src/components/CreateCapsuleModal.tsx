@@ -8,6 +8,7 @@ import { CapsuleCreationProvider, useCapsuleCreation } from "@/contexts/CapsuleC
 import CapsuleCreationForm from "./capsule/CapsuleCreationForm";
 import CreateCapsuleButton from "./capsule/CreateCapsuleButton";
 import { validateCapsuleData, createCapsuleInDatabase } from "@/utils/capsuleCreationUtils";
+import { TwitterShareButton, TwitterIcon } from "react-share";
 
 interface CreateCapsuleModalProps {
   isOpen: boolean;
@@ -15,10 +16,41 @@ interface CreateCapsuleModalProps {
   onCapsuleCreated?: () => void;
 }
 
+interface SuccessModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const SuccessModal = ({ isOpen, onClose }: SuccessModalProps) => {
+  const shareUrl = window.location.origin;
+  const shareText = "🚀 I just created a digital time capsule on blockchain! Store memories and unlock them later! Check it out: ";
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-space-dark/95 backdrop-blur-xl border border-neon-blue/20 rounded-xl w-full max-w-md text-center">
+        <div className="space-y-6 py-6">
+          <div className="text-5xl flex justify-center">✅</div>
+          <DialogTitle className="text-2xl font-bold text-white">
+            Thank you! Your capsule has been successfully created!
+          </DialogTitle>
+          
+          <div className="pt-4">
+            <TwitterShareButton url={shareUrl} title={shareText} className="py-2 px-4 bg-[#1DA1F2] text-white rounded-full flex items-center justify-center hover:bg-[#1a91da] transition-colors mx-auto">
+              <TwitterIcon size={24} round className="mr-2" />
+              Share on Twitter
+            </TwitterShareButton>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const CreateCapsuleModalContent = ({ onClose, onCapsuleCreated }: Omit<CreateCapsuleModalProps, 'isOpen'>) => {
   const { toast } = useToast();
   const { userProfile } = useAuth();
   const { isConnected } = useAccount();
+  const [showSuccessModal, setShowSuccessModal] = React.useState(false);
   const {
     capsuleName,
     message,
@@ -64,11 +96,9 @@ const CreateCapsuleModalContent = ({ onClose, onCapsuleCreated }: Omit<CreateCap
       
       console.log("Capsule created successfully:", capsule);
       
-      toast({
-        title: "Success!",
-        description: "Your time capsule has been created successfully.",
-      });
-
+      // Show success modal instead of toast
+      setShowSuccessModal(true);
+      
       resetForm();
       
       // Call the callback to refresh the capsules list
@@ -90,6 +120,10 @@ const CreateCapsuleModalContent = ({ onClose, onCapsuleCreated }: Omit<CreateCap
     }
   };
 
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+  };
+
   return (
     <>
       <DialogHeader>
@@ -106,6 +140,11 @@ const CreateCapsuleModalContent = ({ onClose, onCapsuleCreated }: Omit<CreateCap
         paymentAmount={getPaymentAmountDisplay()}
         paymentMethod={paymentMethod}
         onValidate={() => validateCapsuleData(userProfile, isConnected, capsuleName, selectedDate)}
+      />
+      
+      <SuccessModal 
+        isOpen={showSuccessModal} 
+        onClose={handleSuccessModalClose} 
       />
     </>
   );

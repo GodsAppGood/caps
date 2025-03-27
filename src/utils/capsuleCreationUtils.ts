@@ -82,28 +82,65 @@ export const createCapsuleInDatabase = async (
   console.log("Creating capsule in database with transaction hash:", txHash);
   let imageUrl: string | null = null;
   
-  if (selectedImage) {
-    imageUrl = await uploadImageToSupabase(selectedImage);
-    console.log("Image uploaded successfully, URL:", imageUrl);
+  try {
+    if (selectedImage) {
+      // Create the bucket if it doesn't exist
+      const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('capsule_images');
+      
+      if (bucketError && bucketError.message.includes('does not exist')) {
+        console.log("Bucket doesn't exist, creating...");
+        const { error: createError } = await supabase.storage.createBucket('capsule_images', {
+          public: true,
+        });
+        
+        if (createError) {
+          console.error("Error creating bucket:", createError);
+          toast({
+            title: "Storage Error",
+            description: "Could not create storage for images. Using text-only capsule.",
+            variant: "destructive",
+          });
+        } else {
+          imageUrl = await uploadImageToSupabase(selectedImage);
+          console.log("Image uploaded successfully, URL:", imageUrl);
+        }
+      } else {
+        imageUrl = await uploadImageToSupabase(selectedImage);
+        console.log("Image uploaded successfully, URL:", imageUrl);
+      }
+    }
+    
+    if (!userProfileId) {
+      throw new Error("User profile ID not found");
+    }
+    
+    const capsuleData = {
+      name: capsuleName,
+      creator_id: userProfileId,
+      image_url: imageUrl,
+      message: message,
+      open_date: selectedDate.toISOString(),
+      auction_enabled: auctionEnabled,
+      status: 'closed' as 'closed',
+      tx_hash: txHash
+    };
+    
+    console.log("Creating capsule with data:", capsuleData);
+    return await createCapsule(capsuleData);
+  } catch (error) {
+    console.error("Error in createCapsuleInDatabase:", error);
+    
+    // Log more detailed information for debugging
+    if (error instanceof Error) {
+      console.error("Error details:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    }
+    
+    throw error;
   }
-  
-  if (!userProfileId) {
-    throw new Error("User profile ID not found");
-  }
-  
-  const capsuleData = {
-    name: capsuleName,
-    creator_id: userProfileId,
-    image_url: imageUrl,
-    message: message,
-    open_date: selectedDate.toISOString(),
-    auction_enabled: auctionEnabled,
-    status: 'closed' as 'closed',
-    tx_hash: txHash
-  };
-  
-  console.log("Creating capsule with data:", capsuleData);
-  return await createCapsule(capsuleData);
 };
 
 // Handle payment process

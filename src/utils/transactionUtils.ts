@@ -15,6 +15,12 @@ export const sendPaymentTransaction = async (
   try {
     console.log("Starting payment transaction");
     
+    // Make sure ethereum provider exists in window
+    if (typeof window === 'undefined' || !window.ethereum) {
+      console.error("Ethereum provider not found");
+      throw new Error("No Ethereum provider found. Please install MetaMask or another compatible wallet");
+    }
+    
     // Get the provider and signer
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     await provider.send("eth_requestAccounts", []);
