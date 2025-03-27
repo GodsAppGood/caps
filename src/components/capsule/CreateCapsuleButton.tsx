@@ -20,7 +20,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod,
   const { toast } = useToast();
   const { address, isConnected } = useAccount();
   const [processingPayment, setProcessingPayment] = useState(false);
-  const { setIsLoading } = useCapsuleCreation();
+  const { setIsLoading, setLatestTxHash } = useCapsuleCreation();
 
   const handlePayment = async () => {
     if (processingPayment) {
@@ -88,8 +88,15 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod,
       // Process payment using the utility function
       await processCapsulePayment(paymentMethod, (success, txHash) => {
         setProcessingPayment(false);
-        if (!success) {
+        if (success && txHash) {
+          setLatestTxHash(txHash);
+        } else {
           setIsLoading(false);
+          toast({
+            title: "Payment Error",
+            description: "Payment not completed. Please try again.",
+            variant: "destructive",
+          });
         }
         onClick(success, txHash);
       });

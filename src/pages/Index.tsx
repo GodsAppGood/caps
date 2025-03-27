@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAccount } from "wagmi";
 import { getAllCapsules, Capsule } from "@/services/capsuleService";
@@ -25,17 +25,12 @@ const Index = () => {
   const [upcomingCapsules, setUpcomingCapsules] = useState<Capsule[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-    fetchCapsules();
-  }, []);
-
-  const fetchCapsules = async () => {
+  const fetchCapsules = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getAllCapsules();
       if (data && data.length) {
-        const auctionEnabled = data.filter(capsule => capsule.current_bid !== undefined);
+        const auctionEnabled = data.filter(capsule => capsule.auction_enabled);
         setAuctionCapsules(auctionEnabled.slice(0, 6));
         
         const now = new Date();
@@ -60,14 +55,15 @@ const Index = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
+    fetchCapsules();
+  }, [fetchCapsules]);
 
   const handleCapsuleCreated = () => {
     console.log("Capsule created, refreshing list");
-    toast({
-      title: "Capsule Created!",
-      description: "Your new time capsule has been added to the main page",
-    });
     fetchCapsules();
   };
 
