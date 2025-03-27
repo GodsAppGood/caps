@@ -13,7 +13,6 @@ import Testimonials from "@/components/home/Testimonials";
 import CreateCapsuleModal from "@/components/CreateCapsuleModal";
 import { Button } from "@/components/ui/button";
 import { Rocket } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { user } = useAuth();
@@ -32,7 +31,6 @@ const Index = () => {
 
   const fetchCapsules = async () => {
     try {
-      setLoading(true);
       const data = await getAllCapsules();
       if (data && data.length) {
         const auctionEnabled = data.filter(capsule => capsule.current_bid !== undefined);
@@ -52,23 +50,9 @@ const Index = () => {
       }
     } catch (error) {
       console.error("Error fetching capsules:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load time capsules. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCapsuleCreated = () => {
-    console.log("Capsule created, refreshing list");
-    toast({
-      title: "Capsule Created!",
-      description: "Your new time capsule has been added to the main page",
-    });
-    fetchCapsules();
   };
 
   if (!mounted) return null;
@@ -97,8 +81,7 @@ const Index = () => {
       
       <CreateCapsuleModal 
         isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)}
-        onCapsuleCreated={handleCapsuleCreated}
+        onClose={() => setIsCreateModalOpen(false)} 
       />
     </div>
   );

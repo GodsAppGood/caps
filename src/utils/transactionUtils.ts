@@ -13,18 +13,8 @@ export const sendPaymentTransaction = async (
   amount: string
 ): Promise<ethers.providers.TransactionReceipt | null> => {
   try {
-    console.log("Starting payment transaction");
-    
-    // Make sure ethereum provider exists in window
-    if (typeof window === 'undefined' || !window.ethereum) {
-      console.error("Ethereum provider not found");
-      throw new Error("No Ethereum provider found. Please install MetaMask or another compatible wallet");
-    }
-    
     // Get the provider and signer
     const provider = new ethers.providers.Web3Provider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    
     const signer = provider.getSigner();
     const userAddress = await signer.getAddress();
     console.log("Sending payment from address:", userAddress);
@@ -32,7 +22,6 @@ export const sendPaymentTransaction = async (
     // Check network to determine currency
     const network = await provider.getNetwork();
     const currency = network.chainId === 56 || network.chainId === 97 ? "BNB" : "ETH";
-    console.log("Network detected:", network.name, "Chain ID:", network.chainId, "Currency:", currency);
 
     // Create transaction
     const tx = {
@@ -72,22 +61,11 @@ export const sendPaymentTransaction = async (
     }
   } catch (error: any) {
     console.error("Transaction error:", error);
-    
-    // Check for user rejected transaction
-    if (error.code === 4001 || error.message?.includes('user rejected')) {
-      toast({
-        title: "Transaction Rejected",
-        description: "You rejected the transaction in your wallet",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Transaction Error",
-        description: error.message || "An error occurred processing the transaction",
-        variant: "destructive",
-      });
-    }
-    
+    toast({
+      title: "Transaction Error",
+      description: error.message || "An error occurred processing the transaction",
+      variant: "destructive",
+    });
     return null;
   }
 };
@@ -102,7 +80,7 @@ export const sendPaymentTransaction = async (
 export const handleCapsuleCreationTransaction = async (
   recipientAddress: string,
   amount: string,
-  onSuccess: (txHash: string) => void
+  onSuccess: () => void
 ): Promise<boolean> => {
   try {
     console.log("Starting capsule creation transaction process");
@@ -110,9 +88,9 @@ export const handleCapsuleCreationTransaction = async (
     const receipt = await sendPaymentTransaction(recipientAddress, amount);
     
     // If payment was successful, call the success callback
-    if (receipt && receipt.transactionHash) {
-      console.log("Payment successful, creating capsule with txHash:", receipt.transactionHash);
-      onSuccess(receipt.transactionHash);
+    if (receipt) {
+      console.log("Payment successful, creating capsule...");
+      onSuccess();
       return true;
     }
     

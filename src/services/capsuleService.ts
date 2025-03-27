@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export type Capsule = {
@@ -51,14 +50,6 @@ export const createCapsule = async (capsuleData: CapsuleCreate) => {
   try {
     console.log("Creating capsule with data:", capsuleData);
     
-    // Check if we're authenticated before proceeding
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      console.error("User not authenticated");
-      throw new Error("User must be authenticated to create a capsule");
-    }
-    
-    // Insert the capsule data
     const { data, error } = await supabase
       .from('capsules')
       .insert({
