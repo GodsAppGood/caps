@@ -7,7 +7,6 @@ import { useAccount } from "wagmi";
 import { CapsuleCreationProvider, useCapsuleCreation } from "@/contexts/CapsuleCreationContext";
 import CapsuleCreationForm from "./capsule/CapsuleCreationForm";
 import CreateCapsuleButton from "./capsule/CreateCapsuleButton";
-import CapsuleSuccessModal from "./capsule/CapsuleSuccessModal";
 import { validateCapsuleData, createCapsuleInDatabase } from "@/utils/capsuleCreationUtils";
 
 interface CreateCapsuleModalProps {
@@ -29,7 +28,6 @@ const CreateCapsuleModalContent = ({ onClose, onCapsuleCreated }: Omit<CreateCap
     paymentMethod,
     isLoading,
     setIsLoading,
-    setShowSuccessModal,
     resetForm
   } = useCapsuleCreation();
 
@@ -66,13 +64,20 @@ const CreateCapsuleModalContent = ({ onClose, onCapsuleCreated }: Omit<CreateCap
       
       console.log("Capsule created successfully:", capsule);
       
-      // Show success modal
-      setShowSuccessModal(true);
+      toast({
+        title: "Success!",
+        description: "Your time capsule has been created successfully.",
+      });
+
+      resetForm();
       
       // Call the callback to refresh the capsules list
       if (onCapsuleCreated) {
         onCapsuleCreated();
       }
+      
+      // Close the modal after successful creation
+      onClose();
     } catch (error: any) {
       console.error("Error creating capsule:", error);
       toast({
@@ -80,14 +85,9 @@ const CreateCapsuleModalContent = ({ onClose, onCapsuleCreated }: Omit<CreateCap
         description: error.message || "Capsule creation failed",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSuccessModalClose = () => {
-    resetForm();
-    setIsLoading(false);
-    onClose();
   };
 
   return (
@@ -107,25 +107,20 @@ const CreateCapsuleModalContent = ({ onClose, onCapsuleCreated }: Omit<CreateCap
         paymentMethod={paymentMethod}
         onValidate={() => validateCapsuleData(userProfile, isConnected, capsuleName, selectedDate)}
       />
-
-      <CapsuleSuccessModal onClose={handleSuccessModalClose} />
     </>
   );
 };
 
 const CreateCapsuleModal = ({ isOpen, onClose, onCapsuleCreated }: CreateCapsuleModalProps) => {
   const ModalWrapper = () => {
-    const { isLoading, showSuccessModal } = useCapsuleCreation();
+    const { isLoading } = useCapsuleCreation();
     
     return (
-      <Dialog 
-        open={isOpen} 
-        onOpenChange={(open) => {
-          if (!open && !isLoading && !showSuccessModal) {
-            onClose();
-          }
-        }}
-      >
+      <Dialog open={isOpen} onOpenChange={(open) => {
+        if (!open && !isLoading) {
+          onClose();
+        }
+      }}>
         <DialogContent className="bg-space-dark/95 backdrop-blur-xl border border-neon-blue/20 rounded-xl w-full max-w-lg">
           <CreateCapsuleModalContent onClose={onClose} onCapsuleCreated={onCapsuleCreated} />
         </DialogContent>

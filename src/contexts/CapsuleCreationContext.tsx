@@ -18,10 +18,6 @@ type CapsuleCreationContextType = {
   setPaymentMethod: (method: number) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
-  showSuccessModal: boolean;
-  setShowSuccessModal: (show: boolean) => void;
-  latestTxHash: string | null;
-  setLatestTxHash: (hash: string | null) => void;
   resetForm: () => void;
 };
 
@@ -36,8 +32,6 @@ export const CapsuleCreationProvider = ({ children }: { children: ReactNode }) =
   const [auctionEnabled, setAuctionEnabled] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState(0); // 0 = BNB, 1 = ETH
   const [isLoading, setIsLoading] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [latestTxHash, setLatestTxHash] = useState<string | null>(null);
 
   const resetForm = () => {
     setCapsuleName("");
@@ -47,7 +41,6 @@ export const CapsuleCreationProvider = ({ children }: { children: ReactNode }) =
     setPreviewUrl(null);
     setAuctionEnabled(false);
     setPaymentMethod(0);
-    setLatestTxHash(null);
   };
 
   return (
@@ -69,10 +62,6 @@ export const CapsuleCreationProvider = ({ children }: { children: ReactNode }) =
         setPaymentMethod,
         isLoading,
         setIsLoading,
-        showSuccessModal,
-        setShowSuccessModal,
-        latestTxHash,
-        setLatestTxHash,
         resetForm,
       }}
     >

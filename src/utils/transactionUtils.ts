@@ -61,22 +61,11 @@ export const sendPaymentTransaction = async (
     }
   } catch (error: any) {
     console.error("Transaction error:", error);
-    
-    // Check for user rejection
-    if (error.code === 4001) { // MetaMask user rejected
-      toast({
-        title: "Transaction Cancelled",
-        description: "You cancelled the transaction",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Transaction Error",
-        description: error.message || "An error occurred processing the transaction",
-        variant: "destructive",
-      });
-    }
-    
+    toast({
+      title: "Transaction Error",
+      description: error.message || "An error occurred processing the transaction",
+      variant: "destructive",
+    });
     return null;
   }
 };
@@ -106,6 +95,11 @@ export const handleCapsuleCreationTransaction = async (
     }
     
     console.log("Payment failed or was not confirmed");
+    toast({
+      title: "Payment Not Completed",
+      description: "The payment transaction wasn't confirmed. Please try again.",
+      variant: "destructive",
+    });
     return false;
   } catch (error: any) {
     console.error("Capsule creation transaction error:", error);
