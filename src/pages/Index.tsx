@@ -13,6 +13,7 @@ import Testimonials from "@/components/home/Testimonials";
 import CreateCapsuleModal from "@/components/CreateCapsuleModal";
 import { Button } from "@/components/ui/button";
 import { Rocket } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { user } = useAuth();
@@ -51,6 +52,11 @@ const Index = () => {
       }
     } catch (error) {
       console.error("Error fetching capsules:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load time capsules. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -58,6 +64,10 @@ const Index = () => {
 
   const handleCapsuleCreated = () => {
     console.log("Capsule created, refreshing list");
+    toast({
+      title: "Capsule Created!",
+      description: "Your new time capsule has been added to the main page",
+    });
     fetchCapsules();
   };
 
