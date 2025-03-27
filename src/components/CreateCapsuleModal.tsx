@@ -128,7 +128,7 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
       });
 
       resetForm();
-      onClose();
+      onClose(); // Close the modal after successful creation
     } catch (error: any) {
       console.error("Error creating capsule:", error);
       toast({
@@ -163,7 +163,13 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
       console.log("Image uploaded successfully, URL:", imageUrl);
     }
     
-    const content = message || "Empty time capsule";
+    if (!userProfile || !userProfile.id) {
+      throw new Error("User profile not found");
+    }
+    
+    if (!selectedDate) {
+      throw new Error("Unlock date is required");
+    }
     
     const capsuleData = {
       name: capsuleName,
@@ -191,7 +197,14 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        // Only allow closing if not loading
+        if (!isLoading) {
+          onClose();
+        }
+      }
+    }}>
       <DialogContent className="bg-space-dark/95 backdrop-blur-xl border border-neon-blue/20 rounded-xl w-full max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center text-white">

@@ -80,7 +80,7 @@ export const sendPaymentTransaction = async (
 export const handleCapsuleCreationTransaction = async (
   recipientAddress: string,
   amount: string,
-  onSuccess: () => void
+  onSuccess: (txHash: string) => void
 ): Promise<boolean> => {
   try {
     console.log("Starting capsule creation transaction process");
@@ -88,9 +88,9 @@ export const handleCapsuleCreationTransaction = async (
     const receipt = await sendPaymentTransaction(recipientAddress, amount);
     
     // If payment was successful, call the success callback
-    if (receipt) {
+    if (receipt && receipt.transactionHash) {
       console.log("Payment successful, creating capsule...");
-      onSuccess();
+      onSuccess(receipt.transactionHash);
       return true;
     }
     
