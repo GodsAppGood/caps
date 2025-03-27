@@ -5,7 +5,7 @@ import { CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAccount } from "wagmi";
 import { checkWalletConnection, switchToBscNetwork, openWalletModal } from "@/utils/walletUtils";
-import { ethers } from "ethers";
+import { handleCapsuleCreationTransaction } from "@/utils/transactionUtils";
 
 interface CreateCapsuleButtonProps {
   isLoading: boolean;
@@ -23,6 +23,11 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
   const [processingPayment, setProcessingPayment] = useState(false);
 
   const handlePayment = async () => {
+    if (processingPayment) {
+      console.log("Payment already processing, skipping...");
+      return;
+    }
+
     const currency = paymentMethod === 0 ? "BNB" : "ETH";
     const amount = paymentMethod === 0 ? "0.01" : "0.005";
     
@@ -72,99 +77,35 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
           setProcessingPayment(false);
           return;
         }
-      } else {
-        // For ETH, make sure we're on the Ethereum network
-        try {
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          const network = await provider.getNetwork();
-          
-          // If not on Ethereum network (chainId 1), prompt to switch
-          if (network.chainId !== 1) {
-            console.log("User not on Ethereum network. Attempting to switch...");
-            await window.ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: '0x1' }], // 0x1 is 1 in hex (Ethereum Mainnet)
-            });
-            console.log("Successfully switched to Ethereum network");
-          }
-        } catch (switchError: any) {
-          console.error("Error switching to Ethereum network:", switchError);
-          toast({
-            title: "Network Error",
-            description: "Please switch to Ethereum network manually",
-            variant: "destructive",
-          });
-          setProcessingPayment(false);
-          return;
-        }
       }
 
-      console.log(`Proceeding with ${currency} transaction (${amount} ${currency}) to address:`, RECIPIENT_ADDRESS);
+      console.log(`Proceeding with transaction process for ${amount} ${currency}`);
       
-      try {
-        // Get the provider and signer
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
-        const userAddress = await signer.getAddress();
-        console.log("Sending from address:", userAddress);
-        
-        // Create transaction
-        const tx = {
-          to: RECIPIENT_ADDRESS,
-          value: ethers.utils.parseEther(amount),
-          gasLimit: ethers.utils.hexlify(100000), // Increased gas limit for transfers
-        };
-        
-        console.log("Sending transaction:", tx);
-        
-        // Request wallet to send transaction
-        const transaction = await signer.sendTransaction(tx);
-        console.log("Transaction sent:", transaction.hash);
-        
-        toast({
-          title: "Transaction Sent",
-          description: `Your payment of ${amount} ${currency} is being processed...`,
-        });
-        
-        // Wait for confirmation
-        const receipt = await transaction.wait();
-        console.log("Transaction confirmed with receipt:", receipt);
-        
-        if (receipt.status === 1) {
-          toast({
-            title: "Payment Successful",
-            description: `Your payment of ${amount} ${currency} has been processed`,
-          });
-          
-          // Call the onClick callback to continue with capsule creation
-          console.log("Calling onClick with success=true and txHash:", transaction.hash);
-          onClick(true, transaction.hash);
-          setProcessingPayment(false);
-          return true;
-        } else {
-          throw new Error(`Transaction was not successful. Status: ${receipt.status}`);
+      // Use the transaction util instead of repeating the code here
+      const success = await handleCapsuleCreationTransaction(
+        RECIPIENT_ADDRESS, 
+        amount,
+        (txHash) => {
+          console.log("Transaction successful with hash:", txHash);
+          onClick(true, txHash); // Pass the transaction hash to the parent component
         }
-      } catch (txError: any) {
-        console.error("Transaction execution error:", txError);
-        toast({
-          title: "Transaction Error",
-          description: txError.message || "Failed to execute transaction",
-          variant: "destructive",
-        });
+      );
+      
+      if (!success) {
+        console.log("Transaction process did not complete successfully");
         onClick(false);
-        setProcessingPayment(false);
-        return false;
       }
+      
     } catch (error: any) {
-      console.error("Payment error:", error);
+      console.error("Payment process error:", error);
       toast({
         title: "Payment Error",
         description: error.message || "An error occurred processing the payment",
         variant: "destructive",
       });
       onClick(false);
+    } finally {
       setProcessingPayment(false);
-      return false;
     }
   };
 

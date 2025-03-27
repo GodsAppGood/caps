@@ -89,7 +89,7 @@ export const handleCapsuleCreationTransaction = async (
     
     // If payment was successful, call the success callback
     if (receipt && receipt.transactionHash) {
-      console.log("Payment successful, creating capsule...");
+      console.log("Payment successful, creating capsule with txHash:", receipt.transactionHash);
       onSuccess(receipt.transactionHash);
       return true;
     }

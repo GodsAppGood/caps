@@ -142,7 +142,7 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
   };
 
   const createCapsuleInDatabase = async (txHash?: string) => {
-    console.log("Creating capsule in database...");
+    console.log("Creating capsule in database with transaction hash:", txHash);
     let imageUrl: string | null = null;
     if (selectedImage) {
       console.log("Uploading image...");
