@@ -128,7 +128,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
         
         // Wait for confirmation
         const receipt = await transaction.wait();
-        console.log("Transaction confirmed with receipt:", receipt);
+        console.log("Transaction confirmed:", receipt);
         
         if (receipt.status === 1) {
           toast({
@@ -137,9 +137,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
           });
           
           // Call the onClick callback to continue with capsule creation
-          console.log("Calling onClick with success=true and txHash:", transaction.hash);
           onClick(true, transaction.hash);
-          setProcessingPayment(false);
           return true;
         } else {
           throw new Error(`Transaction was not successful. Status: ${receipt.status}`);
@@ -152,7 +150,6 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
           variant: "destructive",
         });
         onClick(false);
-        setProcessingPayment(false);
         return false;
       }
     } catch (error: any) {
@@ -163,8 +160,9 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
         variant: "destructive",
       });
       onClick(false);
-      setProcessingPayment(false);
       return false;
+    } finally {
+      setProcessingPayment(false);
     }
   };
 

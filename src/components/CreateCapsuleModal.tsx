@@ -115,12 +115,8 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
     }
     
     try {
-      setIsLoading(true);  // Ensure we're still in loading state during capsule creation
-      console.log("Starting to create capsule in database with txHash:", txHash);
-      
       // Create the capsule in the database after successful payment
-      const capsule = await createCapsuleInDatabase(txHash);
-      console.log("Capsule created successfully:", capsule);
+      await createCapsuleInDatabase(txHash);
       
       toast({
         title: "Success",
@@ -142,10 +138,8 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
   };
 
   const createCapsuleInDatabase = async (txHash?: string) => {
-    console.log("Creating capsule in database...");
     let imageUrl: string | null = null;
     if (selectedImage) {
-      console.log("Uploading image...");
       const fileExt = selectedImage.name.split('.').pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `public/${fileName}`;
@@ -155,12 +149,10 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
         .upload(filePath, selectedImage);
 
       if (uploadError) {
-        console.error("Error uploading image:", uploadError);
         throw uploadError;
       }
 
       imageUrl = supabase.storage.from('capsule_images').getPublicUrl(filePath).data.publicUrl;
-      console.log("Image uploaded successfully, URL:", imageUrl);
     }
     
     const content = message || "Empty time capsule";
@@ -176,7 +168,6 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
       tx_hash: txHash
     };
     
-    console.log("Creating capsule with data:", capsuleData);
     return await createCapsule(capsuleData);
   };
 
@@ -187,7 +178,6 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
 
     setIsLoading(true);
     // Payment and capsule creation will happen in the CreateCapsuleButton component
-    // After successful payment, handlePaymentComplete will be called
   };
 
   return (
