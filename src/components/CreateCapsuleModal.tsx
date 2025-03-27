@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { createCapsule } from "@/services/capsuleService";
+import { createCapsule, getAllCapsules } from "@/services/capsuleService";
 import { useAccount } from "wagmi";
 
 // Import sub-components
@@ -19,9 +19,10 @@ import CreateCapsuleButton from "./capsule/CreateCapsuleButton";
 interface CreateCapsuleModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onCapsuleCreated?: () => void; // Add callback for capsule creation
 }
 
-const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
+const CreateCapsuleModal = ({ isOpen, onClose, onCapsuleCreated }: CreateCapsuleModalProps) => {
   const [capsuleName, setCapsuleName] = useState("");
   const [message, setMessage] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -123,12 +124,19 @@ const CreateCapsuleModal = ({ isOpen, onClose }: CreateCapsuleModalProps) => {
       console.log("Capsule created successfully:", capsule);
       
       toast({
-        title: "Success",
+        title: "Success!",
         description: "Your time capsule has been created successfully.",
       });
 
       resetForm();
-      onClose(); // Close the modal after successful creation
+      
+      // Call the callback to refresh the capsules list
+      if (onCapsuleCreated) {
+        onCapsuleCreated();
+      }
+      
+      // Close the modal after successful creation
+      onClose();
     } catch (error: any) {
       console.error("Error creating capsule:", error);
       toast({

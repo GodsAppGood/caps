@@ -31,6 +31,7 @@ const Index = () => {
 
   const fetchCapsules = async () => {
     try {
+      setLoading(true);
       const data = await getAllCapsules();
       if (data && data.length) {
         const auctionEnabled = data.filter(capsule => capsule.current_bid !== undefined);
@@ -53,6 +54,11 @@ const Index = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCapsuleCreated = () => {
+    console.log("Capsule created, refreshing list");
+    fetchCapsules();
   };
 
   if (!mounted) return null;
@@ -81,7 +87,8 @@ const Index = () => {
       
       <CreateCapsuleModal 
         isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
+        onClose={() => setIsCreateModalOpen(false)}
+        onCapsuleCreated={handleCapsuleCreated}
       />
     </div>
   );
