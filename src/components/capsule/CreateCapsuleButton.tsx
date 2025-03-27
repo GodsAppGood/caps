@@ -5,22 +5,22 @@ import { CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAccount } from "wagmi";
 import { checkWalletConnection, switchToBscNetwork, openWalletModal } from "@/utils/walletUtils";
-import { handleCapsuleCreationTransaction } from "@/utils/transactionUtils";
+import { processCapsulePayment } from "@/utils/capsuleCreationUtils";
+import { useCapsuleCreation } from "@/contexts/CapsuleCreationContext";
 
 interface CreateCapsuleButtonProps {
   isLoading: boolean;
   onClick: (success: boolean, txHash?: string) => void;
   paymentAmount: string;
   paymentMethod: number; // 0 = BNB, 1 = ETH
+  onValidate: () => boolean;
 }
 
-// Recipient address for the payment
-const RECIPIENT_ADDRESS = "0x0AbD5b7B6DE3ceA8702dAB2827D31CDA46c6e750";
-
-const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod }: CreateCapsuleButtonProps) => {
+const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod, onValidate }: CreateCapsuleButtonProps) => {
   const { toast } = useToast();
   const { address, isConnected } = useAccount();
   const [processingPayment, setProcessingPayment] = useState(false);
+  const { setIsLoading } = useCapsuleCreation();
 
   const handlePayment = async () => {
     if (processingPayment) {
@@ -28,10 +28,12 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
       return;
     }
 
-    const currency = paymentMethod === 0 ? "BNB" : "ETH";
-    const amount = paymentMethod === 0 ? "0.01" : "0.005";
-    
-    console.log(`Payment button clicked with method: ${currency}, amount: ${amount}`);
+    // Validate form data first
+    if (!onValidate()) {
+      return;
+    }
+
+    setIsLoading(true);
     setProcessingPayment(true);
     
     try {
@@ -47,6 +49,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
         // Trigger wallet connection via Web3Modal
         openWalletModal();
         setProcessingPayment(false);
+        setIsLoading(false);
         return;
       }
 
@@ -59,6 +62,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
           variant: "destructive",
         });
         setProcessingPayment(false);
+        setIsLoading(false);
         return;
       }
 
@@ -66,6 +70,7 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
       const isWalletReady = await checkWalletConnection();
       if (!isWalletReady) {
         setProcessingPayment(false);
+        setIsLoading(false);
         return;
       }
       
@@ -75,26 +80,19 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
         const isNetworkReady = await switchToBscNetwork();
         if (!isNetworkReady) {
           setProcessingPayment(false);
+          setIsLoading(false);
           return;
         }
       }
 
-      console.log(`Proceeding with transaction process for ${amount} ${currency}`);
-      
-      // Use the transaction util instead of repeating the code here
-      const success = await handleCapsuleCreationTransaction(
-        RECIPIENT_ADDRESS, 
-        amount,
-        (txHash) => {
-          console.log("Transaction successful with hash:", txHash);
-          onClick(true, txHash); // Pass the transaction hash to the parent component
+      // Process payment using the utility function
+      await processCapsulePayment(paymentMethod, (success, txHash) => {
+        setProcessingPayment(false);
+        if (!success) {
+          setIsLoading(false);
         }
-      );
-      
-      if (!success) {
-        console.log("Transaction process did not complete successfully");
-        onClick(false);
-      }
+        onClick(success, txHash);
+      });
       
     } catch (error: any) {
       console.error("Payment process error:", error);
@@ -104,8 +102,8 @@ const CreateCapsuleButton = ({ isLoading, onClick, paymentAmount, paymentMethod 
         variant: "destructive",
       });
       onClick(false);
-    } finally {
       setProcessingPayment(false);
+      setIsLoading(false);
     }
   };
 
