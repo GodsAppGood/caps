@@ -41,6 +41,7 @@ export const CapsuleCreationProvider = ({ children }: { children: ReactNode }) =
     setPreviewUrl(null);
     setAuctionEnabled(false);
     setPaymentMethod(0);
+    setIsLoading(false);
   };
 
   return (

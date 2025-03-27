@@ -72,11 +72,22 @@ export const sendPaymentTransaction = async (
     }
   } catch (error: any) {
     console.error("Transaction error:", error);
-    toast({
-      title: "Transaction Error",
-      description: error.message || "An error occurred processing the transaction",
-      variant: "destructive",
-    });
+    
+    // Check for user rejected transaction
+    if (error.code === 4001 || error.message?.includes('user rejected')) {
+      toast({
+        title: "Transaction Rejected",
+        description: "You rejected the transaction in your wallet",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Transaction Error",
+        description: error.message || "An error occurred processing the transaction",
+        variant: "destructive",
+      });
+    }
+    
     return null;
   }
 };

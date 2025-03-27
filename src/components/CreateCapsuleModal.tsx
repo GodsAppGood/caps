@@ -151,12 +151,10 @@ const CreateCapsuleModalContent = ({ onClose, onCapsuleCreated }: Omit<CreateCap
 };
 
 const CreateCapsuleModal = ({ isOpen, onClose, onCapsuleCreated }: CreateCapsuleModalProps) => {
-  const ModalWrapper = () => {
-    const { isLoading } = useCapsuleCreation();
-    
-    return (
+  return (
+    <CapsuleCreationProvider>
       <Dialog open={isOpen} onOpenChange={(open) => {
-        if (!open && !isLoading) {
+        if (!open) {
           onClose();
         }
       }}>
@@ -164,13 +162,6 @@ const CreateCapsuleModal = ({ isOpen, onClose, onCapsuleCreated }: CreateCapsule
           <CreateCapsuleModalContent onClose={onClose} onCapsuleCreated={onCapsuleCreated} />
         </DialogContent>
       </Dialog>
-    );
-  };
-
-  // Wrap the entire modal in the context provider
-  return (
-    <CapsuleCreationProvider>
-      <ModalWrapper />
     </CapsuleCreationProvider>
   );
 };
